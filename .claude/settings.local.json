@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(node --check \"/Users/eleme/Desktop/Interactive Web Design Competition/js/app.js\")",
+      "mcp__plugin_oh-my-claudecode_t__ast_grep_search",
+      "Bash(node --check js/scenes/wrap-scene.js)",
+      "Bash(node --check js/constants.js)",
+      "Bash(sips -g pixelWidth -g pixelHeight bg-wrap-table-original.png)",
+      "Bash(cwebp -q 82 -resize 1920 0 bg-wrap-table-original.png -o bg-wrap-table.webp)",
+      "Bash(sips -s format webp -s formatOptions 82 --resampleWidth 1920 bg-wrap-table-original.png --out bg-wrap-table.webp)",
+      "Bash(ffmpeg -y -i bg-wrap-table-original.png -vf \"scale=1920:-1\" -quality 82 bg-wrap-table.webp)",
+      "Bash(python3 *)",
+      "Bash(node --check js/scenes/intro-scene.js)",
+      "Bash(node --check js/scenes/mugwort-scene.js)",
+      "Bash(node --check js/scenes/base-scene.js)"
+    ]
+  }
+}

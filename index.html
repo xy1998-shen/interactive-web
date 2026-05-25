@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>楚江寻艾</title>
+    <link rel="icon" type="image/png" href="assets/favicon.png">
+    <link rel="stylesheet" href="css/style.css">
+  </head>
+  <body>
+    <main id="app" aria-label="楚江寻艾互动体验">
+      <canvas id="stage" aria-hidden="true"></canvas>
+
+      <section id="dom-layer" class="dom-layer" aria-live="polite">
+        <div class="chapter-mark">
+          <span id="chapter-index">01</span>
+          <span id="chapter-name">入江</span>
+        </div>
+
+        <div id="hero-copy" class="hero-copy is-muted">
+          <p class="eyebrow">楚江寻艾</p>
+          <h1>拨开江雾</h1>
+          <p class="subtitle">顺水入江，在雾青江光里寻端午旧物。</p>
+        </div>
+
+        <div id="hint" class="hint">按住拖动，拨开江雾</div>
+
+        <aside id="story-scroll" class="story-scroll is-hidden" aria-label="端午故事">
+          <div class="scroll-cap scroll-cap-top"></div>
+          <div class="scroll-paper">
+            <p class="story-line">楚江晨雾未散，舟行旧水之间。两千余年以前，三闾大夫屈原曾在楚地行吟，把家国之忧写进江风。</p>
+            <p class="story-line">《离骚》有言：“路漫漫其修远兮，吾将上下而求索。”那一声求索，后来随五月江水，被一代代人记起。</p>
+            <p class="story-line">相传屈原沉汨罗后，乡人竞舟追寻，以角黍投江，愿鱼龙不伤其身；又悬艾佩兰，以草木清气护住盛夏门户。</p>
+            <p class="story-line">于是端午不只是一日节令，也是后人把忠贞、忧思与祝愿，一年年送回江上的方式。</p>
+            <button id="story-next" class="story-next is-hidden" type="button">随舟寻艾</button>
+          </div>
+          <div class="scroll-cap scroll-cap-bottom"></div>
+        </aside>
+
+        <button id="intro-cta" class="intro-cta is-hidden" type="button" aria-label="入江寻艾">
+          入江寻艾 →
+        </button>
+
+        <nav id="river-progress" class="river-progress" aria-label="江流进度">
+          <button class="progress-node is-current" type="button" data-scene="intro" aria-label="入江"></button>
+          <button class="progress-node" type="button" data-scene="mugwort" aria-label="寻艾"></button>
+          <button class="progress-node" type="button" data-scene="wrap" aria-label="裹青"></button>
+          <button class="progress-node" type="button" data-scene="drum" aria-label="听鼓"></button>
+          <button class="progress-node" type="button" data-scene="poem" aria-label="问诗"></button>
+          <button class="progress-node" type="button" data-scene="bell" aria-label="和鸣"></button>
+          <button class="progress-node" type="button" data-scene="finale" aria-label="尾声"></button>
+        </nav>
+      </section>
+    </main>
+
+    <!-- 依赖库 -->
+    <script src="libs/pixi.min.js"></script>
+    <script src="libs/gsap.min.js"></script>
+
+    <!-- 基础模块：常量、配置、工具 -->
+    <script src="js/constants.js"></script>
+    <script src="js/config.js"></script>
+    <script src="js/utils.js"></script>
+    <script src="js/asset-loader.js"></script>
+    <script src="js/dom-layer.js"></script>
+
+    <!-- 场景：基类必须先于各幕加载 -->
+    <script src="js/scenes/empty-scene.js"></script>
+    <script src="js/scenes/base-scene.js"></script>
+    <!-- 各幕交互（挂载到 base-scene 原型） -->
+    <script src="js/scenes/mugwort-scene.js"></script>
+    <script src="js/scenes/wrap-scene.js"></script>
+    <script src="js/scenes/drum-scene.js"></script>
+    <script src="js/scenes/poem-scene.js"></script>
+    <script src="js/scenes/bell-scene.js"></script>
+    <script src="js/scenes/finale-scene.js"></script>
+    <script src="js/scenes/intro-scene.js"></script>
+
+    <!-- 应用入口 -->
+    <script src="js/scene-manager.js"></script>
+    <script src="js/app.js"></script>
+  </body>
+</html>
