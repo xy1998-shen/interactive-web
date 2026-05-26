@@ -122,16 +122,23 @@ h1 {
 .hint {
   position: absolute;
   left: 50%;
-  bottom: 112px;
+  bottom: calc(clamp(56px, 7vh, 84px) + 54px);
   transform: translateX(-50%);
-  padding: 6px 12px;
-  border: 0;
+  min-height: 30px;
+  padding: 6px 15px 7px;
+  border: 1px solid rgba(196, 161, 93, 0.22);
   border-radius: 999px;
-  background: rgba(237, 245, 239, 0.22);
-  color: rgba(22, 52, 58, 0.52);
+  background:
+    linear-gradient(180deg, rgba(241, 232, 210, 0.3), rgba(237, 245, 239, 0.18)),
+    rgba(216, 222, 209, 0.2);
+  color: rgba(22, 52, 58, 0.58);
+  font-family: inherit;
   font-size: 13px;
-  backdrop-filter: blur(8px);
-  transition: opacity 360ms ease, transform 360ms ease;
+  letter-spacing: 0;
+  line-height: 1.25;
+  box-shadow: 0 8px 22px rgba(16, 28, 27, 0.04);
+  backdrop-filter: blur(10px);
+  transition: opacity 360ms ease, transform 420ms ease, background 240ms ease, border-color 240ms ease, color 240ms ease;
   overflow: hidden;
   --intro-progress: 0;
 }
@@ -153,6 +160,20 @@ h1 {
 .hint.is-hidden {
   opacity: 0;
   transform: translate(-50%, 8px);
+}
+
+.hint.is-complete {
+  bottom: calc(clamp(56px, 7vh, 84px) + 58px);
+  border-color: transparent;
+  background: transparent;
+  color: rgba(22, 52, 58, 0.66);
+  box-shadow: none;
+  backdrop-filter: none;
+  text-shadow: 0 1px 12px rgba(237, 245, 239, 0.7), 0 0 10px rgba(142, 168, 106, 0.14);
+}
+
+.hint.is-complete::after {
+  opacity: 0;
 }
 
 .story-scroll {
@@ -242,7 +263,7 @@ h1 {
 }
 
 .story-next {
-  display: block;
+  display: none;
   width: fit-content;
   margin: 24px auto 0;
   padding: 8px 18px;
@@ -271,32 +292,69 @@ h1 {
 .intro-cta {
   position: absolute;
   left: 50%;
-  bottom: 132px;
+  bottom: clamp(56px, 7vh, 84px);
   transform: translateX(-50%);
-  min-width: 132px;
-  height: 42px;
-  padding: 0 22px;
-  border: 1px solid rgba(196, 161, 93, 0.72);
+  min-width: 126px;
+  height: 40px;
+  padding: 0 24px;
+  border: 1px solid rgba(196, 161, 93, 0.66);
   border-radius: 999px;
-  background: rgba(237, 245, 239, 0.46);
+  background:
+    radial-gradient(ellipse at 50% 100%, rgba(196, 161, 93, 0.16), transparent 62%),
+    linear-gradient(180deg, rgba(241, 232, 210, 0.76), rgba(237, 245, 239, 0.5));
   color: var(--ink);
   font-family: inherit;
-  font-size: 16px;
+  font-size: 15px;
+  line-height: 1;
   letter-spacing: 0;
-  box-shadow: 0 0 20px rgba(237, 245, 239, 0.22), 0 0 14px rgba(196, 161, 93, 0.16);
-  backdrop-filter: blur(14px);
+  box-shadow: 0 10px 26px rgba(16, 28, 27, 0.08), 0 0 18px rgba(196, 161, 93, 0.18), inset 0 1px 0 rgba(255, 252, 240, 0.44);
+  backdrop-filter: blur(16px);
   cursor: pointer;
   pointer-events: auto;
-  transition: opacity 360ms ease, transform 360ms ease, background 240ms ease, box-shadow 240ms ease;
+  z-index: 4;
+  overflow: hidden;
+  transition: opacity 380ms ease, transform 420ms ease, background 240ms ease, border-color 240ms ease, box-shadow 240ms ease;
+}
+
+.intro-cta::before,
+.intro-cta::after {
+  position: absolute;
+  left: 18px;
+  right: 18px;
+  content: "";
+  pointer-events: none;
+}
+
+.intro-cta::before {
+  top: 8px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255, 252, 240, 0.58), transparent);
+}
+
+.intro-cta::after {
+  bottom: 7px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(196, 161, 93, 0.58), transparent);
 }
 
 .intro-cta.is-action {
-  bottom: 52px;
+  bottom: clamp(56px, 7vh, 84px);
+  min-width: 152px;
+  border-color: rgba(196, 161, 93, 0.9);
+  background:
+    radial-gradient(ellipse at 50% 100%, rgba(196, 161, 93, 0.24), transparent 64%),
+    linear-gradient(180deg, rgba(241, 232, 210, 0.92), rgba(237, 245, 239, 0.72));
+  color: rgba(13, 43, 48, 0.95);
+  box-shadow: 0 14px 32px rgba(16, 28, 27, 0.12), 0 0 28px rgba(196, 161, 93, 0.34), inset 0 1px 0 rgba(255, 252, 240, 0.56);
 }
 
 .intro-cta:hover {
-  background: rgba(237, 245, 239, 0.72);
-  box-shadow: 0 0 32px rgba(237, 245, 239, 0.38), 0 0 22px rgba(196, 161, 93, 0.34);
+  transform: translate(-50%, -3px);
+  border-color: rgba(196, 161, 93, 0.86);
+  background:
+    radial-gradient(ellipse at 50% 100%, rgba(196, 161, 93, 0.22), transparent 64%),
+    linear-gradient(180deg, rgba(241, 232, 210, 0.86), rgba(237, 245, 239, 0.62));
+  box-shadow: 0 14px 30px rgba(16, 28, 27, 0.1), 0 0 26px rgba(196, 161, 93, 0.28), inset 0 1px 0 rgba(255, 252, 240, 0.52);
 }
 
 .intro-cta:focus-visible {
@@ -310,48 +368,194 @@ h1 {
   pointer-events: none;
 }
 
+.progress-symbols {
+  position: absolute;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+}
+
 .river-progress {
   position: absolute;
-  right: 42px;
-  bottom: 36px;
+  right: 48px;
+  bottom: 42px;
   display: grid;
-  grid-template-columns: repeat(7, 22px);
+  grid-template-columns: repeat(7, 27px);
   align-items: center;
-  gap: 14px;
+  gap: 9px;
+  filter: drop-shadow(0 2px 10px rgba(237, 245, 239, 0.28));
   pointer-events: auto;
+  --journey-progress: 0;
+}
+
+.river-progress::before,
+.river-progress::after {
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  top: 50%;
+  height: 10px;
+  content: "";
+  transform: translateY(-50%) skewX(-10deg);
+  pointer-events: none;
 }
 
 .river-progress::before {
-  position: absolute;
-  left: 11px;
-  right: 11px;
-  top: 50%;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(22, 52, 58, 0.38), transparent);
-  content: "";
+  background:
+    radial-gradient(ellipse at 12% 56%, rgba(237, 245, 239, 0.2), transparent 24%),
+    radial-gradient(ellipse at 58% 42%, rgba(237, 245, 239, 0.16), transparent 28%),
+    linear-gradient(90deg, transparent, rgba(22, 52, 58, 0.28), rgba(237, 245, 239, 0.24), transparent);
+  opacity: 0.9;
+}
+
+.river-progress::after {
+  right: auto;
+  width: calc((100% - 24px) * var(--journey-progress));
+  background:
+    radial-gradient(ellipse at 72% 50%, rgba(217, 166, 90, 0.42), transparent 30%),
+    linear-gradient(90deg, rgba(196, 161, 93, 0.04), rgba(196, 161, 93, 0.62), rgba(241, 232, 210, 0.18));
+  box-shadow: 0 0 14px rgba(196, 161, 93, 0.18);
+  transition: width 420ms ease;
 }
 
 .progress-node {
   position: relative;
-  width: 22px;
-  height: 22px;
+  z-index: 1;
+  width: 27px;
+  height: 32px;
   padding: 0;
-  border: 1px solid rgba(22, 52, 58, 0.38);
-  border-radius: 50%;
-  background: rgba(237, 245, 239, 0.46);
-  box-shadow: 0 0 0 5px rgba(237, 245, 239, 0.18);
+  border: 0;
+  background: transparent;
   cursor: pointer;
+  transition: transform 240ms ease;
+}
+
+.progress-node::before,
+.progress-node::after {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  content: "";
+  transform: translate(-50%, -50%);
+}
+
+.progress-node::before {
+  width: 22px;
+  height: 28px;
+  border: 1px solid rgba(232, 225, 210, 0.48);
+  border-radius: 2px 2px 7px 7px;
+  background:
+    linear-gradient(160deg, rgba(241, 232, 210, 0.28), transparent 30%),
+    linear-gradient(180deg, rgba(16, 28, 27, 0.08), rgba(16, 28, 27, 0.28));
+  box-shadow: inset 0 0 8px rgba(16, 28, 27, 0.18), 0 0 8px rgba(232, 225, 210, 0.14);
+  clip-path: polygon(50% 0, 88% 18%, 78% 100%, 22% 100%, 12% 18%);
+  transition: border-color 240ms ease, background 240ms ease, box-shadow 240ms ease;
+}
+
+.progress-node:nth-child(2n)::before {
+  clip-path: polygon(18% 0, 82% 0, 92% 78%, 50% 100%, 8% 78%);
+}
+
+.progress-node::after {
+  top: auto;
+  bottom: 5px;
+  width: 9px;
+  height: 1px;
+  background: rgba(232, 225, 210, 0.34);
+  border-radius: 999px;
+  transform: translateX(-50%);
+  transition: background 240ms ease, opacity 240ms ease;
+}
+
+.progress-icon {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  z-index: 2;
+  width: 17px;
+  height: 17px;
+  color: rgba(232, 225, 210, 0.72);
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.9;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transform: translate(-50%, -50%) scale(0.92);
+  transition: color 240ms ease, transform 240ms ease, filter 240ms ease;
 }
 
 .progress-node.is-current,
 .progress-node.is-complete {
-  border-color: rgba(196, 161, 93, 0.85);
-  background: var(--gold);
+  transform: translateY(-1px);
+}
+
+.progress-node.is-current::before,
+.progress-node.is-complete::before {
+  border-color: rgba(241, 232, 210, 0.42);
+  background:
+    linear-gradient(160deg, rgba(241, 232, 210, 0.58), transparent 32%),
+    linear-gradient(180deg, rgba(213, 174, 95, 0.94), rgba(126, 91, 38, 0.86));
+  box-shadow: inset 0 0 7px rgba(145, 107, 45, 0.22), 0 0 14px rgba(200, 164, 93, 0.28);
+}
+
+.progress-node.is-current::after {
+  background: rgba(16, 28, 27, 0.42);
+}
+
+.progress-node.is-current .progress-icon,
+.progress-node.is-complete .progress-icon {
+  color: rgba(16, 28, 27, 0.66);
+  transform: translate(-50%, -50%) scale(1);
+  filter: drop-shadow(0 1px 2px rgba(241, 232, 210, 0.18));
+}
+
+.progress-node.is-current::before {
+  box-shadow: inset 0 0 7px rgba(145, 107, 45, 0.22), 0 0 0 5px rgba(200, 164, 93, 0.08), 0 0 18px rgba(200, 164, 93, 0.3);
+  animation: riverNodePulse 2200ms ease-in-out infinite;
+}
+
+.progress-node:nth-child(1),
+.progress-node:nth-child(5) {
+  transform: translateY(2px);
+}
+
+.progress-node:nth-child(2),
+.progress-node:nth-child(6) {
+  transform: translateY(-3px);
+}
+
+.progress-node:nth-child(4) {
+  transform: translateY(3px);
+}
+
+.progress-node:hover {
+  transform: translateY(-2px) scale(1.04);
+}
+
+.progress-node:hover::before {
+  border-color: rgba(241, 232, 210, 0.82);
+  box-shadow: inset 0 0 8px rgba(16, 28, 27, 0.16), 0 0 16px rgba(241, 232, 210, 0.24);
+}
+
+.progress-node:hover .progress-icon {
+  color: rgba(241, 232, 210, 0.94);
+  transform: translate(-50%, -50%) scale(1);
 }
 
 .progress-node:focus-visible {
   outline: 2px solid var(--ink);
   outline-offset: 3px;
+}
+
+@keyframes riverNodePulse {
+  0%,
+  100% {
+    box-shadow: inset 0 0 7px rgba(145, 107, 45, 0.22), 0 0 0 5px rgba(200, 164, 93, 0.08), 0 0 18px rgba(200, 164, 93, 0.26);
+  }
+
+  50% {
+    box-shadow: inset 0 0 7px rgba(145, 107, 45, 0.22), 0 0 0 8px rgba(200, 164, 93, 0.12), 0 0 24px rgba(200, 164, 93, 0.36);
+  }
 }
 
 @media (max-aspect-ratio: 4 / 3) {

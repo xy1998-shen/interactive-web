@@ -41,9 +41,6 @@
     var zongzi = this.createSprite("zongzi", CONFIG.zongziWidthRatio, CONFIG.centerX, CONFIG.centerY, viewport);
     zongzi.alpha = 0;
     zongzi.eventMode = "none";
-    var zongziThread = this.createSprite("zongziThread", CONFIG.zongziWidthRatio, CONFIG.centerX, CONFIG.centerY, viewport);
-    zongziThread.alpha = 0;
-    zongziThread.eventMode = "none";
 
     // 米粒粒子容器
     var particles = new PIXI.Container();
@@ -65,10 +62,10 @@
       left: left,
       right: right,
       zongzi: zongzi,
-      zongziThread: zongziThread,
       targetDot: targetDot,
       particles: particles,
       phaseAParticles: [],
+      phaseAGlyphs: [],
       centerX: centerX,
       centerY: centerY,
       breathPulse: breathPulse,
@@ -77,6 +74,8 @@
     };
 
     this.spawnWrapPhaseAParticles();
+    this.addWrapTableCues(viewport);
+    this.showWrapEntryNote(viewport);
 
     // 单次点击触发全自动播放
     tapArea.on("pointertap", function () {
@@ -85,6 +84,31 @@
     });
 
     this.cleanups.push(function () { breathPulse.kill(); });
+  };
+
+  NS.MVPScene.prototype.addWrapTableCues = function (viewport) {
+    var state = this.state.wrap;
+    var shadow = new PIXI.Graphics();
+    shadow.beginFill(0x16343a, 0.1);
+    shadow.drawEllipse(0, 0, viewport.width * 0.12, viewport.height * 0.035);
+    shadow.endFill();
+    shadow.position.set(state.centerX, state.centerY + viewport.height * 0.09);
+    state.group.addChildAt(shadow, 0);
+  };
+
+  NS.MVPScene.prototype.showWrapEntryNote = function (viewport) {
+    var state = this.state.wrap;
+    var note = new PIXI.Text(CONFIG.entryNote, {
+      fontFamily: "Songti SC, STSong, FangSong, serif",
+      fontSize: CONFIG.entryNoteFontSize,
+      fill: 0x16343a,
+      align: "center"
+    });
+    note.anchor.set(0.5);
+    note.alpha = CONFIG.entryNoteAlpha;
+    note.position.set(viewport.width * CONFIG.entryNoteX, viewport.height * CONFIG.entryNoteY);
+    state.entryNote = note;
+    this.content.addChild(note);
   };
 
   // 时间轴串联左叶、右叶合拢与自动束线
@@ -97,6 +121,13 @@
     this.setHint("");
 
     var tl = global.gsap.timeline();
+
+    if (state.tableCue) {
+      tl.to(state.tableCue, { alpha: 0, duration: 0.25 }, 0);
+    }
+    if (state.entryNote) {
+      tl.to(state.entryNote, { alpha: 0, y: state.entryNote.y + 8, duration: 0.3 }, 0);
+    }
 
     // Step 1: 左叶合拢
     tl.to(state.left, {
@@ -135,56 +166,27 @@
   NS.MVPScene.prototype.autoPlayWrapThread = function (viewport, parentTl, startTime) {
     var scene = this;
     var state = this.state.wrap;
+    var glow = new PIXI.Graphics();
+    glow.beginFill(CONFIG.threadColor, 0.55);
+    glow.drawCircle(0, 0, 9);
+    glow.endFill();
+    glow.lineStyle(1.5, CONFIG.threadColor, 0.28);
+    glow.drawCircle(0, 0, 18);
+    glow.position.set(state.centerX + viewport.width * 0.13, state.centerY + viewport.height * 0.02);
+    glow.alpha = 0;
+    state.group.addChild(glow);
 
-    // 绘制缠线
-    var threadY = viewport.height * CONFIG.threadY;
-    var threadLeft = viewport.width * (0.5 - CONFIG.threadDragWidth / 2);
-    var threadRight = viewport.width * (0.5 + CONFIG.threadDragWidth / 2);
-
-    var thread = new PIXI.Graphics();
-    thread.lineStyle(CONFIG.threadLineWidth, CONFIG.threadColor, 0.3);
-    thread.moveTo(threadLeft, threadY);
-    thread.lineTo(threadRight, threadY);
-    thread.alpha = 0;
-    state.group.addChild(thread);
-
-    // 光标指示（纯视觉）
-    var cursor = new PIXI.Graphics();
-    cursor.beginFill(0xe8e1d2, 0.72);
-    cursor.drawCircle(0, 0, 12);
-    cursor.endFill();
-    cursor.lineStyle(1.2, CONFIG.threadColor, 0.6);
-    cursor.drawCircle(0, 0, 16);
-    cursor.position.set(threadLeft, threadY);
-    state.group.addChild(cursor);
-
-    var animObj = { progress: 0 };
-
-    // 线出现
-    parentTl.to(thread, { alpha: CONFIG.threadAlpha, duration: 0.3 }, startTime);
-
-    // 光标自动滑到右侧
-    parentTl.to(animObj, {
-      progress: 1,
-      duration: 1.0,
-      ease: "power2.inOut",
-      onUpdate: function () {
-        var clampedX = threadLeft + (threadRight - threadLeft) * animObj.progress;
-        cursor.x = clampedX;
-        // 动态绘制已缠线段
-        thread.clear();
-        thread.lineStyle(CONFIG.threadLineWidth, CONFIG.threadColor, 0.3);
-        thread.moveTo(threadLeft, threadY);
-        thread.lineTo(threadRight, threadY);
-        thread.lineStyle(CONFIG.threadLineWidth + 1, CONFIG.threadColor, CONFIG.threadAlpha);
-        thread.moveTo(threadLeft, threadY);
-        thread.lineTo(clampedX, threadY);
-      }
-    }, startTime + 0.3);
+    parentTl.to(glow, { alpha: 1, duration: 0.22 }, startTime);
+    parentTl.to(glow, {
+      x: state.centerX,
+      y: state.centerY,
+      alpha: 0,
+      duration: 0.9,
+      ease: "power2.inOut"
+    }, startTime + 0.25);
 
     // 束线完成 → 触发完成态
     parentTl.add(function () {
-      global.gsap.to(cursor, { alpha: 0, duration: 0.3 });
       scene.completeWrapSequence(viewport);
     }, startTime + 1.4);
   };
@@ -206,20 +208,8 @@
       duration: CONFIG.zongziFadeInDuration,
       ease: "sine.out"
     });
-    global.gsap.to(state.zongziThread, {
-      alpha: 0.9,
-      duration: CONFIG.zongziThreadFadeInDuration,
-      delay: CONFIG.zongziThreadDelay,
-      ease: "sine.out"
-    });
-
     // 完成态旋转
     global.gsap.to(state.zongzi, {
-      rotation: CONFIG.completionRotation,
-      duration: CONFIG.completionRotationDuration,
-      ease: "sine.inOut"
-    });
-    global.gsap.to(state.zongziThread, {
       rotation: CONFIG.completionRotation,
       duration: CONFIG.completionRotationDuration,
       ease: "sine.inOut"
@@ -229,8 +219,9 @@
     this.spawnWrapParticles(viewport);
     this.spawnWrapTransitionRings(viewport);
 
-    // 光点 → finish
-    global.gsap.delayedCall(CONFIG.wrapDuration + CONFIG.particleGatherDuration + 0.1, function () {
+    // 完成态信息应紧跟粽形出现，避免用户等待时误解为流程结束。
+    global.gsap.delayedCall(CONFIG.wrapDuration + 0.25, function () {
+      scene.showWrapCulturalNote(viewport);
       scene.showWrapKnowledgeDot(viewport);
     });
   };
@@ -259,6 +250,27 @@
         ease: "sine.inOut"
       });
     }
+
+    CONFIG.glyphPool.forEach(function (glyph, index) {
+      var text = new PIXI.Text(glyph, {
+        fontFamily: "Songti SC, STSong, FangSong, serif",
+        fontSize: CONFIG.glyphFontSize,
+        fill: CONFIG.glyphColor,
+        align: "center"
+      });
+      text.anchor.set(0.5);
+      text.alpha = 0.34 + Math.random() * 0.22;
+      text.position.set(cx + (Math.random() - 0.5) * 210, cy + (Math.random() - 0.5) * 92);
+      state.particles.addChild(text);
+      state.phaseAGlyphs.push(text);
+      global.gsap.to(text, {
+        y: text.y + CONFIG.particlePhaseAFloatRange * (Math.random() > 0.5 ? 1 : -1),
+        duration: 1.4 + Math.random() * 0.8,
+        yoyo: true,
+        repeat: -1,
+        ease: "sine.inOut"
+      });
+    });
   };
 
   NS.MVPScene.prototype.gatherWrapPhaseAParticles = function (spread) {
@@ -269,6 +281,16 @@
         y: state.centerY + (Math.random() - 0.5) * 54 * spread,
         duration: CONFIG.foldDuration,
         delay: index * 0.015,
+        ease: "power2.out"
+      });
+    });
+    state.phaseAGlyphs.forEach(function (p, index) {
+      global.gsap.to(p, {
+        x: state.centerX + (Math.random() - 0.5) * 100 * spread,
+        y: state.centerY + (Math.random() - 0.5) * 60 * spread,
+        alpha: Math.max(0.42, CONFIG.glyphAlpha - spread * 0.18),
+        duration: CONFIG.foldDuration,
+        delay: index * 0.02,
         ease: "power2.out"
       });
     });
@@ -287,6 +309,16 @@
         alpha: 0,
         duration: CONFIG.particleGatherDuration,
         delay: index * 0.02,
+        ease: "power2.in"
+      });
+    });
+    state.phaseAGlyphs.forEach(function (p, index) {
+      global.gsap.to(p, {
+        x: cx + (Math.random() - 0.5) * 24,
+        y: cy + (Math.random() - 0.5) * 32,
+        alpha: 0,
+        duration: CONFIG.particleGatherDuration,
+        delay: index * 0.018,
         ease: "power2.in"
       });
     });
@@ -347,6 +379,8 @@
         delay: 0.12 + index * 0.08 + CONFIG.particleGatherDuration
       });
     });
+
+    this.showWrapPoemLine(viewport);
   };
 
   NS.MVPScene.prototype.pickWrapGlyphs = function () {
@@ -357,6 +391,40 @@
       chosen.push(pool.splice(index, 1)[0]);
     }
     return chosen;
+  };
+
+  NS.MVPScene.prototype.showWrapPoemLine = function (viewport) {
+    var state = this.state.wrap;
+    if (state.poemLine) {
+      return;
+    }
+    var poem = new PIXI.Text(CONFIG.poemLine, {
+      fontFamily: "Songti SC, STSong, FangSong, serif",
+      fontSize: CONFIG.poemFontSize,
+      fill: CONFIG.glyphColor,
+      align: "center",
+      lineHeight: Math.round(CONFIG.poemFontSize * 1.7)
+    });
+    poem.anchor.set(0.5);
+    poem.alpha = 0;
+    poem.position.set(viewport.width * CONFIG.poemFinalX, viewport.height * CONFIG.poemFinalY);
+    poem.scale.set(0.96);
+    state.poemLine = poem;
+    this.content.addChild(poem);
+
+    global.gsap.to(poem, {
+      alpha: 0.82,
+      duration: 0.45,
+      delay: CONFIG.particleGatherDuration * 0.42,
+      ease: "sine.out"
+    });
+    global.gsap.to(poem.scale, {
+      x: 1,
+      y: 1,
+      duration: 0.65,
+      delay: CONFIG.particleGatherDuration * 0.42,
+      ease: "sine.inOut"
+    });
   };
 
   NS.MVPScene.prototype.showWrapKnowledgeDot = function (viewport) {
@@ -373,7 +441,7 @@
     dot.drawCircle(0, 0, CONFIG.knowledgeDotRadius * 2.2);
     dot.position.set(x, y);
     dot.alpha = 0;
-    state.group.addChild(dot);
+    this.content.addChild(dot);
 
     global.gsap.to(dot, { alpha: 1, duration: 0.18 });
     global.gsap.to(dot.scale, {
@@ -396,6 +464,28 @@
         });
       }
     });
+  };
+
+  NS.MVPScene.prototype.showWrapCulturalNote = function (viewport) {
+    var state = this.state.wrap;
+    if (state.culturalNote) {
+      return;
+    }
+    var note = new PIXI.Text(CONFIG.knowledgeNote, {
+      fontFamily: "Songti SC, STSong, FangSong, serif",
+      fontSize: CONFIG.knowledgeNoteFontSize,
+      fill: 0x16343a,
+      align: "center",
+      lineHeight: CONFIG.knowledgeNoteLineHeight,
+      wordWrap: true,
+      wordWrapWidth: Math.min(CONFIG.knowledgeNoteMaxWidth, viewport.width * 0.28)
+    });
+    note.anchor.set(0.5);
+    note.alpha = 0;
+    note.position.set(viewport.width * CONFIG.knowledgeNoteX, viewport.height * CONFIG.knowledgeNoteY);
+    state.culturalNote = note;
+    this.content.addChild(note);
+    global.gsap.to(note, { alpha: CONFIG.knowledgeNoteAlpha, duration: 0.45, ease: "sine.out" });
   };
 
   NS.MVPScene.prototype.spawnWrapTransitionRings = function (viewport) {

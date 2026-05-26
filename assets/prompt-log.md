@@ -150,3 +150,37 @@
 - `sharp.metadata()` 验证输出尺寸符合素材规格。
 - 精灵成品验证为 alpha WebP，边角透明。
 - 暗纹成品验证无文字、水印、边框，体积约 27KB。
+
+## 第三幕裹青重制素材 / v3 / 2026-05-26
+
+规范来源：
+
+- `doc/05-逐幕开发文档/03-裹青.md`
+- `doc/03-设计素材/提示词管理.md`
+
+来源：
+
+- 临水包粽桌背景：`/Users/eleme/Downloads/ChatGPT Image 2026年5月26日 11_52_49.png`
+- 缠线精灵：`/Users/eleme/Downloads/ChatGPT Image 2026年5月26日 11_53_46.png`
+- 粽形完成态：`/Users/eleme/Downloads/ChatGPT Image 2026年5月26日 11_52_52.png`
+
+入库文件：
+
+| 输出文件 | 版本 | 类型 | 源图归档 | 后处理 |
+| --- | --- | --- | --- | --- |
+| `assets/backgrounds/bg-wrap-table.webp` | v3 | 背景 | `assets/source/wrap-table-generated-20260526.png` | 1920x1080，WebP q80 |
+| `assets/sprites/sprite-zongzi.webp` | v2 | 精灵 | `assets/source/zongzi-generated-20260526.png` | 白底边缘抠除，512x512，透明 lossless WebP |
+| `assets/sprites/sprite-zongzi-thread.webp` | v2 | 精灵 | `assets/source/zongzi-thread-generated-20260526.png` | 白底低饱和区域抠除，800x200，透明 lossless WebP |
+
+### 生成结果
+
+- `bg-wrap-table`：临水屋舍、旧木桌、窗外江光和包粽材料清晰，适合作为第三幕主背景。
+- `sprite-zongzi`：三角粽形识别度高，缠线与叶面水墨质感清楚。
+- `sprite-zongzi-thread`：横向线段完整，已去除白底和块状边缘伪影。
+
+### 验证
+
+- `bg-wrap-table.webp`：1920x1080，无 alpha。
+- `sprite-zongzi.webp`：512x512，alpha 通道有效。
+- `sprite-zongzi-thread.webp`：800x200，alpha 通道有效。
+- 三张原始 PNG 已归档到 `assets/source/`。

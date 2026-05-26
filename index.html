@@ -32,23 +32,65 @@
             <p class="story-line">《离骚》有言：“路漫漫其修远兮，吾将上下而求索。”那一声求索，后来随五月江水，被一代代人记起。</p>
             <p class="story-line">相传屈原沉汨罗后，乡人竞舟追寻，以角黍投江，愿鱼龙不伤其身；又悬艾佩兰，以草木清气护住盛夏门户。</p>
             <p class="story-line">于是端午不只是一日节令，也是后人把忠贞、忧思与祝愿，一年年送回江上的方式。</p>
-            <button id="story-next" class="story-next is-hidden" type="button">随舟寻艾</button>
+            <button id="story-next" class="story-next is-hidden" type="button">入下一幕 →</button>
           </div>
           <div class="scroll-cap scroll-cap-bottom"></div>
         </aside>
 
-        <button id="intro-cta" class="intro-cta is-hidden" type="button" aria-label="入江寻艾">
-          入江寻艾 →
+        <button id="intro-cta" class="intro-cta is-hidden" type="button" aria-label="随舟寻艾">
+          随舟寻艾 →
         </button>
 
+        <svg class="progress-symbols" aria-hidden="true">
+          <symbol id="icon-river" viewBox="0 0 24 24">
+            <path d="M3 8c3-2 5 2 8 0s5-2 10 0"></path>
+            <path d="M3 13c3-2 5 2 8 0s5-2 10 0"></path>
+            <path d="M6 18c2-1 4 1 6 0s4-1 6 0"></path>
+          </symbol>
+          <symbol id="icon-mugwort" viewBox="0 0 24 24">
+            <path d="M12 21V7"></path>
+            <path d="M12 9C8 5 6 4 4 4c0 4 2 6 8 7"></path>
+            <path d="M12 12c4-4 6-5 8-5 0 4-2 6-8 7"></path>
+            <path d="M12 15c-3-2-5-2-7-1 1 3 3 4 7 3"></path>
+          </symbol>
+          <symbol id="icon-zongzi" viewBox="0 0 24 24">
+            <path d="M12 4 4 18h16L12 4Z"></path>
+            <path d="M7 14c3-3 7-3 10 0"></path>
+            <path d="M9 18 15 7"></path>
+          </symbol>
+          <symbol id="icon-drum" viewBox="0 0 24 24">
+            <path d="M6 7c3-2 9-2 12 0v10c-3 2-9 2-12 0V7Z"></path>
+            <path d="M6 7c3 2 9 2 12 0"></path>
+            <path d="M6 17c3-2 9-2 12 0"></path>
+            <path d="m4 4 4 4"></path>
+            <path d="m20 4-4 4"></path>
+          </symbol>
+          <symbol id="icon-poem" viewBox="0 0 24 24">
+            <path d="M7 5h11v14H7c-2 0-3-1-3-3V8c0-2 1-3 3-3Z"></path>
+            <path d="M7 5c1 1 1 3 0 4"></path>
+            <path d="M10 10h5"></path>
+            <path d="M10 14h4"></path>
+          </symbol>
+          <symbol id="icon-bell" viewBox="0 0 24 24">
+            <path d="M8 5h8l2 4-2 10H8L6 9l2-4Z"></path>
+            <path d="M9 9h6"></path>
+            <path d="M10 19c1 2 3 2 4 0"></path>
+          </symbol>
+          <symbol id="icon-seal" viewBox="0 0 24 24">
+            <path d="M12 4c5 2 7 5 7 8s-2 6-7 8c-5-2-7-5-7-8s2-6 7-8Z"></path>
+            <path d="M9 12h6"></path>
+            <path d="M12 9v6"></path>
+          </symbol>
+        </svg>
+
         <nav id="river-progress" class="river-progress" aria-label="江流进度">
-          <button class="progress-node is-current" type="button" data-scene="intro" aria-label="入江"></button>
-          <button class="progress-node" type="button" data-scene="mugwort" aria-label="寻艾"></button>
-          <button class="progress-node" type="button" data-scene="wrap" aria-label="裹青"></button>
-          <button class="progress-node" type="button" data-scene="drum" aria-label="听鼓"></button>
-          <button class="progress-node" type="button" data-scene="poem" aria-label="问诗"></button>
-          <button class="progress-node" type="button" data-scene="bell" aria-label="和鸣"></button>
-          <button class="progress-node" type="button" data-scene="finale" aria-label="尾声"></button>
+          <button class="progress-node is-current" type="button" data-scene="intro" aria-label="入江"><svg class="progress-icon"><use href="#icon-river"></use></svg></button>
+          <button class="progress-node" type="button" data-scene="mugwort" aria-label="寻艾"><svg class="progress-icon"><use href="#icon-mugwort"></use></svg></button>
+          <button class="progress-node" type="button" data-scene="wrap" aria-label="裹青"><svg class="progress-icon"><use href="#icon-zongzi"></use></svg></button>
+          <button class="progress-node" type="button" data-scene="drum" aria-label="听鼓"><svg class="progress-icon"><use href="#icon-drum"></use></svg></button>
+          <button class="progress-node" type="button" data-scene="poem" aria-label="问诗"><svg class="progress-icon"><use href="#icon-poem"></use></svg></button>
+          <button class="progress-node" type="button" data-scene="bell" aria-label="和鸣"><svg class="progress-icon"><use href="#icon-bell"></use></svg></button>
+          <button class="progress-node" type="button" data-scene="finale" aria-label="尾声"><svg class="progress-icon"><use href="#icon-seal"></use></svg></button>
         </nav>
       </section>
     </main>
@@ -70,6 +112,7 @@
     <!-- 各幕交互（挂载到 base-scene 原型） -->
     <script src="js/scenes/mugwort-scene.js"></script>
     <script src="js/scenes/wrap-scene.js"></script>
+    <script src="js/scenes/drum-effects.js"></script>
     <script src="js/scenes/drum-scene.js"></script>
     <script src="js/scenes/poem-scene.js"></script>
     <script src="js/scenes/bell-scene.js"></script>

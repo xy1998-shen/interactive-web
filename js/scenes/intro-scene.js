@@ -190,10 +190,9 @@
       this.app.dom.showStoryScroll();
       this.app.dom.hideHint();
       var self = this;
-      this.app.dom.showStoryNext(function () {
+      this.app.dom.showIntroCta("随舟寻艾 →", function () {
         self.goNext();
       });
-      this.app.dom.showIntroCta();
     }
   };
 

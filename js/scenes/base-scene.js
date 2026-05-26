@@ -15,12 +15,12 @@
     wrap: {
       hint: "轻触画面，开始裹粽",
       done: "已裹青",
-      knowledge: "粽叶裹米，既是节令食物，也承接了江水与草木的清香。"
+      knowledge: "粽子承载纪念与寄情，也是端午最具日常感的符号。"
     },
     drum: {
-      hint: "连续击鼓八次，送龙舟过江",
-      done: "已过江",
-      knowledge: "竞渡以鼓为令，龙舟随节奏合力向前。"
+      hint: "随鼓而行",
+      done: "鼓声已渡",
+      knowledge: "龙舟竞渡以鼓为令，众桨同频向前。它从江上追思与乡人合力的传说中生长出来，后来成为端午最有节奏感的节庆场面。"
     },
     poem: {
       hint: "点选三枚字粒",
@@ -109,6 +109,12 @@
     this.knowledgeText.style.wordWrapWidth = Math.min(720, viewport.width * 0.62);
     this.knowledgeText.style.lineHeight = 38;
     this.knowledgeText.position.set(viewport.width / 2, viewport.height - 168);
+    if (this.meta.id === "wrap") {
+      this.knowledgeText.style.fontSize = 18;
+      this.knowledgeText.style.lineHeight = 30;
+      this.knowledgeText.style.wordWrapWidth = Math.min(560, viewport.width * 0.48);
+      this.knowledgeText.position.set(viewport.width * 0.5, viewport.height - 118);
+    }
     this.content.addChild(this.knowledgeText);
   };
 
@@ -208,13 +214,31 @@
     }
     this.completed = true;
     this.manager.completeCurrent();
-    this.setHint(SCENE_COPY[this.meta.id].done);
+    this.app.dom.showCompletion(SCENE_COPY[this.meta.id].done);
+    if (this.meta.id === "wrap") {
+      this.knowledgeText.text = "";
+      this.knowledgeText.alpha = 0;
+      this.app.dom.showAction("入下一幕 →", function () {
+        scene.manager.goTo(scene.index + 1);
+      });
+      return;
+    }
     this.knowledgeText.text = SCENE_COPY[this.meta.id].knowledge;
     if (this.meta.id === "mugwort") {
       this.knowledgeText.alpha = 0;
-      this.app.dom.showStoryNext(function () {
+      this.app.dom.showAction("入下一幕 →", function () {
         scene.manager.goTo(scene.index + 1);
       });
+      return;
+    }
+    if (this.meta.id === "drum") {
+      this.knowledgeText.alpha = 0;
+      this.app.dom.showAction("入下一幕 →", function () {
+        scene.manager.goTo(scene.index + 1);
+      });
+      if (this.showDrumKnowledgeDot) {
+        this.showDrumKnowledgeDot(animate);
+      }
       return;
     }
     this.knowledgeText.alpha = animate === false ? 0.86 : 0;

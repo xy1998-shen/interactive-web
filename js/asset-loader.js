@@ -61,6 +61,10 @@
     var ctx = canvas.getContext("2d");
     canvas.width = 960;
     canvas.height = 540;
+    if (key === "drumsticks") {
+      this.drawFallbackDrumsticks(ctx, canvas.width, canvas.height);
+      return canvas;
+    }
     this.drawFallbackBase(ctx, canvas.width, canvas.height, key);
     if (key === "mugwortVillage") {
       this.drawFallbackMugwortVillage(ctx, canvas.width, canvas.height);
@@ -74,6 +78,8 @@
       this.drawFallbackNearBoat(ctx, canvas.width, canvas.height);
     } else if (key === "leafLeft" || key === "leafRight") {
       this.drawFallbackLeaf(ctx, canvas.width, canvas.height, key === "leafRight");
+    } else if (key === "drumBoatBow") {
+      this.drawFallbackDrumBoatBow(ctx, canvas.width, canvas.height);
     } else if (key === "drum") {
       this.drawFallbackDrum(ctx, canvas.width, canvas.height);
     } else if (key === "boat") {
@@ -88,6 +94,33 @@
     return canvas;
   };
 
+  AssetLoader.prototype.drawFallbackDrumsticks = function (ctx, width, height) {
+    function drawStick(x, y, angle) {
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.rotate(angle);
+      ctx.lineCap = "round";
+      ctx.lineWidth = 16;
+      ctx.strokeStyle = "rgba(90, 70, 50, 0.86)";
+      ctx.beginPath();
+      ctx.moveTo(0, 150);
+      ctx.lineTo(0, -88);
+      ctx.stroke();
+      ctx.fillStyle = "rgba(200, 164, 93, 0.9)";
+      ctx.beginPath();
+      ctx.arc(0, -112, 28, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = "rgba(29, 51, 44, 0.25)";
+      ctx.lineWidth = 2;
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    ctx.clearRect(0, 0, width, height);
+    drawStick(width * 0.32, height * 0.56, -0.62);
+    drawStick(width * 0.68, height * 0.56, 0.62);
+  };
+
   AssetLoader.prototype.drawFallbackBase = function (ctx, width, height, key) {
     var bg = ctx.createLinearGradient(0, 0, width, height);
     if (key === "mugwortVillage") {
@@ -98,6 +131,10 @@
       bg.addColorStop(0, "#d8ebe2");
       bg.addColorStop(0.58, "#edf5ef");
       bg.addColorStop(1, "#a9c5b2");
+    } else if (key === "drumRaceBg") {
+      bg.addColorStop(0, "#e8e1d2");
+      bg.addColorStop(0.45, "#d8ded1");
+      bg.addColorStop(1, "#9eaea3");
     } else if (key === "poemWater" || key === "bamboo") {
       bg.addColorStop(0, "#dfeee9");
       bg.addColorStop(0.55, "#c8dfdb");
@@ -335,6 +372,30 @@
       ctx.arc((i % 4) * width / 4 + 80, Math.floor(i / 4) * height / 4 + 62, 34 + (i % 3) * 16, 0, Math.PI * 2);
       ctx.stroke();
     }
+  };
+
+  AssetLoader.prototype.drawFallbackDrumBoatBow = function (ctx, width, height) {
+    ctx.clearRect(0, 0, width, height);
+    ctx.fillStyle = "rgba(29, 51, 44, 0.42)";
+    ctx.strokeStyle = "rgba(200, 164, 93, 0.22)";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(width * 0.18, height);
+    ctx.lineTo(width * 0.43, height * 0.46);
+    ctx.lineTo(width * 0.5, height * 0.24);
+    ctx.lineTo(width * 0.57, height * 0.46);
+    ctx.lineTo(width * 0.82, height);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.fillStyle = "rgba(164, 61, 50, 0.82)";
+    ctx.strokeStyle = "rgba(200, 164, 93, 0.64)";
+    ctx.lineWidth = 6;
+    ctx.beginPath();
+    ctx.ellipse(width * 0.5, height * 0.72, width * 0.2, height * 0.13, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
   };
 
   AssetLoader.prototype.get = function (key) {

@@ -18,6 +18,7 @@
     this.subtitle = this.heroCopy.querySelector(".subtitle");
     this.hint = document.getElementById("hint");
     this.introCta = document.getElementById("intro-cta");
+    this.progress = document.getElementById("river-progress");
     this.storyScroll = document.getElementById("story-scroll");
     this.storyLines = this.storyScroll ? Array.prototype.slice.call(this.storyScroll.querySelectorAll(".story-line")) : [];
     this.storyNext = document.getElementById("story-next");
@@ -27,9 +28,11 @@
 
   DOMLayer.prototype.setScene = function (sceneIndex, completedScenes) {
     var scene = SCENES[sceneIndex];
+    var progressRatio = this.nodes.length <= 1 ? 0 : sceneIndex / (this.nodes.length - 1);
     this.chapterIndex.textContent = scene.index;
     this.chapterName.textContent = scene.name;
     this.setSceneCopy(scene);
+    this.progress.style.setProperty("--journey-progress", progressRatio.toFixed(3));
     // 进度节点只表达当前场景和已完成状态，不承载业务判断。
     this.nodes.forEach(function (node, index) {
       node.classList.toggle("is-current", index === sceneIndex);
@@ -55,6 +58,7 @@
     // 入江文案随拨雾进度渐显，减少初始画面对主体的遮挡。
     this.heroCopy.classList.toggle("is-muted", !visible);
     this.hint.style.setProperty("--intro-progress", progress.toFixed(3));
+    this.hint.classList.remove("is-complete");
     this.hint.classList.remove("is-hidden");
     if (progress >= 0.82) {
       this.hint.textContent = "江路将现";
@@ -147,11 +151,9 @@
   };
 
   DOMLayer.prototype.showStoryNext = function (handler) {
-    if (!this.storyNext) {
-      return;
-    }
-    this.actionHandler = handler || null;
-    this.storyNext.classList.remove("is-hidden");
+    var label = this.storyNext && this.storyNext.textContent ? this.storyNext.textContent : "入下一幕 →";
+    this.hideStoryNext();
+    this.showAction(label, handler);
   };
 
   DOMLayer.prototype.hideStoryNext = function () {
@@ -165,12 +167,13 @@
     this.heroCopy.classList.remove("is-muted");
     this.hint.style.setProperty("--intro-progress", "1");
     this.hideHint();
-    this.showIntroCta();
+    this.showIntroCta("随舟寻艾 →");
   };
 
-  DOMLayer.prototype.showIntroCta = function () {
-    this.introCta.textContent = "入江寻艾 →";
-    this.introCta.classList.remove("is-action");
+  DOMLayer.prototype.showIntroCta = function (label, handler) {
+    this.actionHandler = handler || null;
+    this.introCta.textContent = label || "随舟寻艾 →";
+    this.introCta.classList.add("is-action");
     this.introCta.classList.remove("is-hidden");
   };
 
@@ -181,6 +184,7 @@
   DOMLayer.prototype.showAction = function (label, handler) {
     this.actionHandler = handler || null;
     this.introCta.textContent = label;
+    this.introCta.setAttribute("aria-label", label.replace(/\s*→\s*$/, ""));
     this.introCta.classList.add("is-action");
     this.introCta.classList.remove("is-hidden");
   };
@@ -193,7 +197,22 @@
   };
 
   DOMLayer.prototype.showHint = function (text) {
+    if (!text) {
+      this.hideHint();
+      return;
+    }
     this.hint.textContent = text;
+    this.hint.classList.remove("is-complete");
+    this.hint.classList.remove("is-hidden");
+  };
+
+  DOMLayer.prototype.showCompletion = function (text) {
+    if (!text) {
+      this.hideHint();
+      return;
+    }
+    this.hint.textContent = text;
+    this.hint.classList.add("is-complete");
     this.hint.classList.remove("is-hidden");
   };
 

@@ -7,8 +7,8 @@
   NS.SCENES = [
     { id: "intro", index: "01", name: "入江", assets: ["introBg", "fog", "ripple", "nearBoat"] },
     { id: "mugwort", index: "02", name: "寻艾", copy: "江左水气未散，村右艾香入户。", assets: ["mugwortVillage", "mugwort", "mugwortHanger", "mugwortHangingBundle"] },
-    { id: "wrap", index: "03", name: "裹青", copy: "依次合叶、收线，把清香包进粽形。", assets: ["wrapTable", "leafLeft", "leafRight", "zongzi", "zongziThread"] },
-    { id: "drum", index: "04", name: "听鼓", copy: "击鼓催舟，沿江水痕向前。", assets: ["poemWater", "drum", "boat"] },
+    { id: "wrap", index: "03", name: "裹青", copy: "轻点桌上青叶，把糯米与诗句收成粽形。", assets: ["wrapTable", "leafLeft", "leafRight", "zongzi"] },
+    { id: "drum", index: "04", name: "听鼓", copy: "远鼓入江，舟影渐明。", assets: ["drumRaceBg", "drumBoatBow", "drumsticks", "drum"] },
     { id: "poem", index: "05", name: "问诗", copy: "点取三枚字粒，让楚江生出短诗。", assets: ["poemWater", "bamboo"] },
     { id: "bell", index: "06", name: "和鸣", copy: "轻触编钟，让礼乐声波入水。", assets: ["poemWater", "bell", "duanwuPattern"] },
     { id: "finale", index: "07", name: "尾声", copy: "点亮艾、粽、舟、钟，收束端午印记。", assets: ["introBg", "seal"] }
@@ -30,9 +30,12 @@
     wrapTable: "assets/backgrounds/bg-wrap-table.webp",
     zongzi: "assets/sprites/sprite-zongzi.webp",
     zongziThread: "assets/sprites/sprite-zongzi-thread.webp",
+    drumRaceBg: "assets/backgrounds/bg-drum-race.webp",
     poemWater: "assets/backgrounds/bg-poem-water.webp",
     bamboo: "assets/backgrounds/bg-bamboo.webp",
     duanwuPattern: "assets/textures/tex-pattern-duanwu.webp",
+    drumBoatBow: "assets/sprites/sprite-drum-boat-bow.webp",
+    drumsticks: "assets/sprites/sprite-drumsticks.webp",
     drum: "assets/sprites/sprite-drum.webp",
     boat: "assets/sprites/sprite-boat.webp",
     bell: "assets/sprites/sprite-bell.webp",
