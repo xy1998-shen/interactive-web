@@ -23,6 +23,8 @@
     this.storyLines = this.storyScroll ? Array.prototype.slice.call(this.storyScroll.querySelectorAll(".story-line")) : [];
     this.storyNext = document.getElementById("story-next");
     this.nodes = Array.prototype.slice.call(document.querySelectorAll(".progress-node"));
+    this.titleArtProbe = null;
+    this.eyebrowArtProbe = null;
     this.actionHandler = null;
   }
 
@@ -45,11 +47,59 @@
       this.eyebrow.textContent = INTRO_COPY.eyebrow;
       this.title.textContent = INTRO_COPY.title;
       this.subtitle.textContent = INTRO_COPY.subtitle;
+      this.setEyebrowArt(NS.TITLE_ASSETS && NS.TITLE_ASSETS.main);
+      this.setTitleArt(NS.TITLE_ASSETS && NS.TITLE_ASSETS.introAction);
       return;
     }
     this.eyebrow.textContent = scene.index + " / 楚江寻艾";
     this.title.textContent = scene.name;
     this.subtitle.textContent = scene.copy || "循江而行，完成本幕端午记忆。";
+    this.setEyebrowArt(null);
+    this.setTitleArt(NS.TITLE_ASSETS && NS.TITLE_ASSETS[scene.id]);
+  };
+
+  DOMLayer.prototype.setEyebrowArt = function (src) {
+    var cssSrc;
+    if (!src) {
+      this.heroCopy.classList.remove("has-eyebrow-art");
+      this.heroCopy.classList.remove("is-eyebrow-art-missing");
+      this.heroCopy.style.removeProperty("--eyebrow-art");
+      return;
+    }
+    cssSrc = new URL(src, document.baseURI).href;
+    this.heroCopy.classList.add("has-eyebrow-art");
+    this.heroCopy.classList.remove("is-eyebrow-art-missing");
+    this.heroCopy.style.setProperty("--eyebrow-art", "url(\"" + cssSrc + "\")");
+    this.eyebrowArtProbe = new Image();
+    this.eyebrowArtProbe.onload = function () {
+      this.heroCopy.classList.remove("is-eyebrow-art-missing");
+    }.bind(this);
+    this.eyebrowArtProbe.onerror = function () {
+      this.heroCopy.classList.add("is-eyebrow-art-missing");
+    }.bind(this);
+    this.eyebrowArtProbe.src = src;
+  };
+
+  DOMLayer.prototype.setTitleArt = function (src) {
+    var cssSrc;
+    if (!src) {
+      this.heroCopy.classList.remove("has-title-art");
+      this.heroCopy.classList.remove("is-title-art-missing");
+      this.heroCopy.style.removeProperty("--title-art");
+      return;
+    }
+    cssSrc = new URL(src, document.baseURI).href;
+    this.heroCopy.classList.add("has-title-art");
+    this.heroCopy.classList.remove("is-title-art-missing");
+    this.heroCopy.style.setProperty("--title-art", "url(\"" + cssSrc + "\")");
+    this.titleArtProbe = new Image();
+    this.titleArtProbe.onload = function () {
+      this.heroCopy.classList.remove("is-title-art-missing");
+    }.bind(this);
+    this.titleArtProbe.onerror = function () {
+      this.heroCopy.classList.add("is-title-art-missing");
+    }.bind(this);
+    this.titleArtProbe.src = src;
   };
 
   DOMLayer.prototype.setIntroProgress = function (progress) {
@@ -171,8 +221,13 @@
   };
 
   DOMLayer.prototype.showIntroCta = function (label, handler) {
+    var plainLabel = (label || "随舟寻艾 →").replace(/\s*→\s*$/, "");
     this.actionHandler = handler || null;
     this.introCta.textContent = label || "随舟寻艾 →";
+    if (plainLabel === "随舟寻艾") {
+      this.title.textContent = plainLabel;
+      this.setTitleArt(NS.TITLE_ASSETS && NS.TITLE_ASSETS.introCompleteAction);
+    }
     this.introCta.classList.add("is-action");
     this.introCta.classList.remove("is-hidden");
   };

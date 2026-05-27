@@ -1,11 +1,27 @@
 :root {
   color-scheme: light;
+  --font-poetic: "ChuJiangWenKai", "Songti SC", "STSong", "FangSong", "Noto Serif CJK SC", serif;
+  --font-serif-fallback: "Songti SC", "STSong", "FangSong", "Noto Serif CJK SC", serif;
+  --font-calligraphy: "ChuJiangCalligraphy", "STKaiti", "Kaiti SC", "KaiTi", "Songti SC", serif;
+  --font-latin-mark: Georgia, "Times New Roman", serif;
   --ink: #16343a;
   --ink-soft: rgba(22, 52, 58, 0.72);
   --paper: #edf5ef;
   --mist: rgba(231, 243, 238, 0.82);
   --gold: #c4a15d;
   --river: #6fa5a2;
+}
+
+@font-face {
+  font-family: "ChuJiangWenKai";
+  src: url("../assets/fonts/LXGWWenKai-subset.woff2") format("woff2");
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "ChuJiangCalligraphy";
+  src: url("../assets/fonts/AaDongQiChangYueYangLouJi-subset.woff2") format("woff2");
+  font-display: swap;
 }
 
 * {
@@ -24,7 +40,7 @@ body,
 body {
   background: #d9ebe5;
   color: var(--ink);
-  font-family: "Songti SC", "STSong", "FangSong", "Noto Serif CJK SC", serif;
+  font-family: var(--font-poetic);
 }
 
 #app {
@@ -58,21 +74,26 @@ body {
   top: 34px;
   left: 42px;
   display: grid;
-  gap: 6px;
-  color: rgba(22, 52, 58, 0.76);
+  gap: 8px;
+  color: rgba(22, 52, 58, 0.82);
   letter-spacing: 0;
-  text-shadow: 0 1px 10px rgba(237, 245, 239, 0.62);
+  text-shadow: 0 1px 12px rgba(237, 245, 239, 0.72);
 }
 
 .chapter-mark span:first-child {
+  color: rgba(22, 52, 58, 0.68);
+  font-family: var(--font-latin-mark);
   font-size: 13px;
-  font-family: Georgia, "Times New Roman", serif;
+  font-weight: 600;
 }
 
 .chapter-mark span:last-child {
+  font-family: var(--font-calligraphy);
+  font-size: 28px;
+  font-weight: 400;
+  line-height: 0.92;
   writing-mode: vertical-rl;
-  font-size: 21px;
-  line-height: 1;
+  text-orientation: upright;
 }
 
 .hero-copy {
@@ -98,17 +119,75 @@ body {
 }
 
 .eyebrow {
+  position: relative;
   margin: 0 0 18px;
   color: var(--ink-soft);
   font-size: 18px;
 }
 
+.hero-copy.has-eyebrow-art .eyebrow {
+  width: min(270px, 100%);
+  height: 46px;
+  color: transparent;
+  text-shadow: none;
+}
+
+.hero-copy.has-eyebrow-art .eyebrow::after {
+  position: absolute;
+  inset: 0;
+  background-image: var(--eyebrow-art);
+  background-position: left center;
+  background-repeat: no-repeat;
+  background-size: contain;
+  content: "";
+}
+
+.hero-copy.is-eyebrow-art-missing .eyebrow {
+  width: auto;
+  height: auto;
+  color: var(--ink-soft);
+  text-shadow: inherit;
+}
+
+.hero-copy.is-eyebrow-art-missing .eyebrow::after {
+  content: none;
+}
+
 h1 {
+  position: relative;
   margin: 0;
   font-size: clamp(64px, 8.4vh, 92px);
   font-weight: 500;
   line-height: 1.04;
   letter-spacing: 0;
+}
+
+.hero-copy.has-title-art h1 {
+  color: transparent;
+  text-shadow: none;
+}
+
+.hero-copy.has-title-art h1::after {
+  position: absolute;
+  left: 0;
+  top: 50%;
+  width: min(560px, 100%);
+  height: 1.24em;
+  background-image: var(--title-art);
+  background-position: left center;
+  background-repeat: no-repeat;
+  background-size: contain;
+  content: "";
+  transform: translateY(-50%);
+}
+
+.hero-copy.is-title-art-missing h1 {
+  color: inherit;
+  text-shadow: inherit;
+}
+
+.hero-copy.is-title-art-missing h1::after {
+  content: none;
 }
 
 .subtitle {

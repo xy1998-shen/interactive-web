@@ -115,7 +115,7 @@ MVP 必须保留轻知识，因为它解决“信息量不够”的问题。
 | 寻艾 | 待验收 | 左江右村背景、村路老人背艾、拖艾到窗前/门楣后触发挂艾人物动画、左侧画轴讲悬艾习俗 | `bg-mugwort-village`、`sprite-mugwort` |
 | 裹青 | 已完成 | 三步简化折叠、轻知识光点 | `sprite-leaf-left/right` |
 | 听鼓 | 已完成 | 鼓面点击、龙舟推进、轻知识光点 | `sprite-drum`、`sprite-boat` |
-| 问诗 | 已完成 | 8 字粒、选 3 字、确定性短诗、触字显义 | `bg-poem-water`、`bg-bamboo` |
+| 问诗 | 已完成 / 视觉验收中 | 水痕入诗、每轮 3 字确定性短诗、再问一诗、触字显义、诗字声波引出和鸣 | `bg-poem-question-figure`、`bg-poem-water`、`sprite-bell` |
 | 和鸣 | 已完成 | 编钟点击、声波扩散、轻知识光点 | `sprite-bell`、`vec-ripple-ring` |
 | 尾声 | 已完成 | 端午印记、四点点亮、重游此程 | `sprite-seal`、`vec-seal-frame` |
 

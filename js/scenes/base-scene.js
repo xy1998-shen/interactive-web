@@ -23,9 +23,9 @@
       knowledge: "龙舟竞渡以鼓为令，众桨同频向前。它从江上追思与乡人合力的传说中生长出来，后来成为端午最有节奏感的节庆场面。"
     },
     poem: {
-      hint: "点选三枚字粒",
-      done: "诗已成",
-      knowledge: "屈原、楚江与端午相连，诗意让节俗有了更深的回声。"
+      hint: "轻触三字，问一行诗",
+      done: "字从水起",
+      knowledge: "屈原诗意与端午记忆相连，是楚江旅程的精神底色。"
     },
     bell: {
       hint: "轻触编钟，听水面回响",
@@ -87,7 +87,7 @@
       return this.app.assets.get("mugwortVillage");
     }
     if (this.meta.id === "poem") {
-      return this.app.assets.get("bamboo");
+      return this.app.assets.get("poemWaterPoet");
     }
     return this.app.assets.get(this.meta.assets[0]);
   };
@@ -115,12 +115,26 @@
       this.knowledgeText.style.wordWrapWidth = Math.min(560, viewport.width * 0.48);
       this.knowledgeText.position.set(viewport.width * 0.5, viewport.height - 118);
     }
+    if (this.meta.id === "poem") {
+      var poemConfig = NS.CONFIG.poem;
+      this.knowledgeText.style.fontSize = poemConfig.knowledgeFontSize;
+      this.knowledgeText.style.lineHeight = poemConfig.knowledgeLineHeight;
+      this.knowledgeText.style.wordWrapWidth = Math.min(360, viewport.width * poemConfig.knowledgeWidthRatio);
+      this.knowledgeText.style.stroke = 0xf4ecd8;
+      this.knowledgeText.style.strokeThickness = 3;
+      this.knowledgeText.style.dropShadow = true;
+      this.knowledgeText.style.dropShadowColor = "#f4ecd8";
+      this.knowledgeText.style.dropShadowBlur = 8;
+      this.knowledgeText.style.dropShadowAlpha = 0.28;
+      this.knowledgeText.style.dropShadowDistance = 0;
+      this.knowledgeText.position.set(viewport.width * poemConfig.knowledgeX, viewport.height * poemConfig.knowledgeY);
+    }
     this.content.addChild(this.knowledgeText);
   };
 
   MVPScene.prototype.createText = function (text, fontSize, fill, alpha) {
     var label = new PIXI.Text(text, {
-      fontFamily: "Songti SC, STSong, FangSong, serif",
+      fontFamily: "Songti SC, STSong, FangSong, Noto Serif CJK SC, serif",
       fontSize: fontSize,
       fill: fill,
       align: "center",
@@ -239,6 +253,18 @@
       if (this.showDrumKnowledgeDot) {
         this.showDrumKnowledgeDot(animate);
       }
+      return;
+    }
+    if (this.meta.id === "poem") {
+      this.knowledgeText.text = "";
+      this.knowledgeText.alpha = 0;
+      this.app.dom.showAction("入下一幕 →", function () {
+        if (scene.playPoemTransition) {
+          scene.playPoemTransition();
+        } else {
+          scene.manager.goTo(scene.index + 1);
+        }
+      });
       return;
     }
     this.knowledgeText.alpha = animate === false ? 0.86 : 0;

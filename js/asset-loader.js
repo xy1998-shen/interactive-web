@@ -35,11 +35,6 @@
     if (!src) {
       return Promise.reject(new Error("未知资源：" + key));
     }
-    if (global.location.protocol === "file:") {
-      this.images[key] = this.createFallbackCanvas(key);
-      this.textures[key] = PIXI.Texture.from(this.images[key]);
-      return Promise.resolve(this.textures[key]);
-    }
     // 直接用 Image 创建纹理，确保本地 file:// 和静态服务两种方式都能稳定加载。
     this.promises[key] = new Promise(function (resolve, reject) {
       var img = new Image();
@@ -49,7 +44,10 @@
         resolve(loader.textures[key]);
       };
       img.onerror = function () {
-        reject(new Error("资源加载失败：" + key + " -> " + src));
+        console.warn("资源加载失败，使用降级绘制:", key, src);
+        loader.images[key] = loader.createFallbackCanvas(key);
+        loader.textures[key] = PIXI.Texture.from(loader.images[key]);
+        resolve(loader.textures[key]);
       };
       img.src = src;
     });
@@ -135,7 +133,7 @@
       bg.addColorStop(0, "#e8e1d2");
       bg.addColorStop(0.45, "#d8ded1");
       bg.addColorStop(1, "#9eaea3");
-    } else if (key === "poemWater" || key === "bamboo") {
+    } else if (key === "poemWater" || key === "bamboo" || key === "poemFigureBg" || key === "poemWaterPoet") {
       bg.addColorStop(0, "#dfeee9");
       bg.addColorStop(0.55, "#c8dfdb");
       bg.addColorStop(1, "#edf5ef");

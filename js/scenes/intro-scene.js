@@ -74,13 +74,7 @@
     this.container.addChild(this.nearBoat);
     this.createWaterStreaks(viewport);
 
-    this.titleText = new PIXI.Text("入江寻艾", {
-      fontFamily: "Songti SC, STSong, FangSong, serif",
-      fontSize: Math.round(Math.min(viewport.width, viewport.height) * 0.07),
-      fill: 0xf4efe0,
-      align: "center",
-      letterSpacing: 0
-    });
+    this.titleText = this.createJourneyTitle();
     this.titleText.anchor.set(0.5);
     this.titleText.alpha = 0;
     this.container.addChild(this.titleText);
@@ -129,6 +123,21 @@
   IntroScene.prototype.onPointerUp = function () {};
 
   IntroScene.prototype.onKeyDown = function () {};
+
+  IntroScene.prototype.createJourneyTitle = function () {
+    var image = this.app.assets.images.introJourneyTitle;
+    var texture = this.app.assets.get("introJourneyTitle");
+    if (image && image.tagName === "IMG" && texture && texture.baseTexture && texture.baseTexture.valid) {
+      return new PIXI.Sprite(texture);
+    }
+    return new PIXI.Text("入江寻艾", {
+      fontFamily: "ChuJiangWenKai, Songti SC, STSong, FangSong, serif",
+      fontSize: 56,
+      fill: 0xf4efe0,
+      align: "center",
+      letterSpacing: 0
+    });
+  };
 
   // 用户轻触后启动自动叙事时间轴
   IntroScene.prototype.triggerAnimation = function () {
@@ -381,8 +390,14 @@
   };
 
   IntroScene.prototype.updateTitle = function (viewport, progress) {
+    var titleWidth = Math.min(viewport.width * 0.34, 520);
     this.titleText.position.set(viewport.width / 2, viewport.height * 0.44);
-    this.titleText.style.fontSize = Math.round(Math.min(viewport.width, viewport.height) * 0.07);
+    if (this.titleText instanceof PIXI.Text) {
+      this.titleText.style.fontSize = Math.round(Math.min(viewport.width, viewport.height) * 0.07);
+    } else {
+      this.titleText.width = titleWidth;
+      this.titleText.scale.y = this.titleText.scale.x;
+    }
     if (!this.started) {
       this.titleText.alpha = 0;
       return;
