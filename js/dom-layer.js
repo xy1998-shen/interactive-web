@@ -12,6 +12,7 @@
   function DOMLayer() {
     this.chapterIndex = document.getElementById("chapter-index");
     this.chapterName = document.getElementById("chapter-name");
+    this.chapterMark = this.chapterIndex ? this.chapterIndex.parentElement : null;
     this.heroCopy = document.getElementById("hero-copy");
     this.eyebrow = this.heroCopy.querySelector(".eyebrow");
     this.title = this.heroCopy.querySelector("h1");
@@ -26,6 +27,15 @@
     this.titleArtProbe = null;
     this.eyebrowArtProbe = null;
     this.actionHandler = null;
+    this.panelCaption = null;
+    this.panelCaptionTitle = null;
+    this.panelCaptionDesc = null;
+    this.panelIndicator = null;
+    this.panelIndicatorDots = [];
+    this.knowledgeCard = null;
+    this.knowledgeCardTitle = null;
+    this.knowledgeCardContent = null;
+    this.knowledgeCardToggle = null;
   }
 
   DOMLayer.prototype.setScene = function (sceneIndex, completedScenes) {
@@ -33,6 +43,10 @@
     var progressRatio = this.nodes.length <= 1 ? 0 : sceneIndex / (this.nodes.length - 1);
     this.chapterIndex.textContent = scene.index;
     this.chapterName.textContent = scene.name;
+    if (this.chapterMark) {
+      this.chapterMark.classList.toggle("is-suppressed", scene.id === "bell" || scene.id === "finale");
+    }
+    this.hint.classList.toggle("is-bell", scene.id === "bell");
     this.setSceneCopy(scene);
     this.progress.style.setProperty("--journey-progress", progressRatio.toFixed(3));
     // 进度节点只表达当前场景和已完成状态，不承载业务判断。
@@ -47,13 +61,15 @@
       this.eyebrow.textContent = INTRO_COPY.eyebrow;
       this.title.textContent = INTRO_COPY.title;
       this.subtitle.textContent = INTRO_COPY.subtitle;
+      this.subtitle.hidden = false;
       this.setEyebrowArt(NS.TITLE_ASSETS && NS.TITLE_ASSETS.main);
       this.setTitleArt(NS.TITLE_ASSETS && NS.TITLE_ASSETS.introAction);
       return;
     }
     this.eyebrow.textContent = scene.index + " / 楚江寻艾";
     this.title.textContent = scene.name;
-    this.subtitle.textContent = scene.copy || "循江而行，完成本幕端午记忆。";
+    this.subtitle.textContent = scene.copy || "";
+    this.subtitle.hidden = scene.copy === "";
     this.setEyebrowArt(null);
     this.setTitleArt(NS.TITLE_ASSETS && NS.TITLE_ASSETS[scene.id]);
   };
@@ -233,6 +249,8 @@
   };
 
   DOMLayer.prototype.hideIntroCta = function () {
+    this.actionHandler = null;
+    this.introCta.setAttribute("aria-label", "场景动作");
     this.introCta.classList.add("is-hidden");
   };
 
@@ -248,7 +266,21 @@
     this.actionHandler = null;
     this.introCta.classList.remove("is-action");
     this.hideIntroCta();
+    this.hideHint();
     this.hideStoryScroll();
+  };
+
+  DOMLayer.prototype.resetSceneControls = function () {
+    this.actionHandler = null;
+    this.introCta.classList.remove("is-action");
+    this.introCta.classList.add("is-hidden");
+    this.introCta.textContent = "";
+    this.introCta.setAttribute("aria-label", "场景动作");
+    this.hideHint();
+    this.hideStoryScroll();
+    this.hidePanelCaption();
+    this.destroyPanelIndicator();
+    this.destroyKnowledgeCard();
   };
 
   DOMLayer.prototype.showHint = function (text) {
@@ -273,6 +305,155 @@
 
   DOMLayer.prototype.hideHint = function () {
     this.hint.classList.add("is-hidden");
+  };
+
+  // ============================================================
+  // 面板配套 DOM：文案、圆点指示器、文化知识卡
+  // ============================================================
+  DOMLayer.prototype.ensurePanelLayerHost = function () {
+    var host = document.querySelector(".dom-layer");
+    return host || document.body;
+  };
+
+  DOMLayer.prototype.showPanelCaption = function (title, description) {
+    var host = this.ensurePanelLayerHost();
+    if (!this.panelCaption) {
+      this.panelCaption = document.createElement("div");
+      this.panelCaption.className = "panel-caption is-hidden";
+      this.panelCaptionTitle = document.createElement("div");
+      this.panelCaptionTitle.className = "caption-title";
+      this.panelCaptionDesc = document.createElement("p");
+      this.panelCaptionDesc.className = "caption-desc";
+      this.panelCaption.appendChild(this.panelCaptionTitle);
+      this.panelCaption.appendChild(this.panelCaptionDesc);
+      host.appendChild(this.panelCaption);
+    }
+    var node = this.panelCaption;
+    var titleNode = this.panelCaptionTitle;
+    var descNode = this.panelCaptionDesc;
+    // 交叉深入：先深出再更新文字、再淑入。
+    node.classList.remove("is-hidden");
+    node.classList.add("is-fading");
+    var update = function () {
+      titleNode.textContent = title || "";
+      descNode.textContent = description || "";
+      node.classList.remove("is-fading");
+    };
+    if (this._panelCaptionTimer) {
+      clearTimeout(this._panelCaptionTimer);
+    }
+    this._panelCaptionTimer = setTimeout(update, 220);
+  };
+
+  DOMLayer.prototype.hidePanelCaption = function () {
+    if (!this.panelCaption) {
+      return;
+    }
+    if (this._panelCaptionTimer) {
+      clearTimeout(this._panelCaptionTimer);
+      this._panelCaptionTimer = null;
+    }
+    this.panelCaption.classList.add("is-hidden");
+  };
+
+  DOMLayer.prototype.createPanelIndicator = function (count, onClickFn) {
+    var host = this.ensurePanelLayerHost();
+    this.destroyPanelIndicator();
+    var bar = document.createElement("div");
+    bar.className = "panel-indicator";
+    var dots = [];
+    for (var i = 0; i < count; i++) {
+      (function (idx) {
+        var dot = document.createElement("button");
+        dot.type = "button";
+        dot.className = "dot";
+        dot.setAttribute("aria-label", "面板 " + (idx + 1));
+        dot.addEventListener("click", function () {
+          if (typeof onClickFn === "function") {
+            onClickFn(idx);
+          }
+        });
+        bar.appendChild(dot);
+        dots.push(dot);
+      }(i));
+    }
+    host.appendChild(bar);
+    this.panelIndicator = bar;
+    this.panelIndicatorDots = dots;
+  };
+
+  DOMLayer.prototype.updatePanelIndicator = function (activeIndex) {
+    if (!this.panelIndicatorDots || !this.panelIndicatorDots.length) {
+      return;
+    }
+    this.panelIndicatorDots.forEach(function (dot, idx) {
+      dot.classList.toggle("active", idx === activeIndex);
+    });
+  };
+
+  DOMLayer.prototype.destroyPanelIndicator = function () {
+    if (this.panelIndicator && this.panelIndicator.parentNode) {
+      this.panelIndicator.parentNode.removeChild(this.panelIndicator);
+    }
+    this.panelIndicator = null;
+    this.panelIndicatorDots = [];
+  };
+
+  DOMLayer.prototype.showKnowledgeCard = function (title, content) {
+    var host = this.ensurePanelLayerHost();
+    if (!this.knowledgeCard) {
+      this.knowledgeCard = document.createElement("div");
+      this.knowledgeCard.className = "knowledge-card is-hidden";
+      this.knowledgeCardToggle = document.createElement("button");
+      this.knowledgeCardToggle.type = "button";
+      this.knowledgeCardToggle.className = "card-toggle";
+      this.knowledgeCardTitle = document.createElement("span");
+      this.knowledgeCardTitle.className = "card-title";
+      var arrow = document.createElement("span");
+      arrow.className = "card-arrow";
+      arrow.textContent = "";
+      this.knowledgeCardToggle.appendChild(this.knowledgeCardTitle);
+      this.knowledgeCardToggle.appendChild(arrow);
+      this.knowledgeCardContent = document.createElement("div");
+      this.knowledgeCardContent.className = "card-content";
+      this.knowledgeCard.appendChild(this.knowledgeCardToggle);
+      this.knowledgeCard.appendChild(this.knowledgeCardContent);
+      host.appendChild(this.knowledgeCard);
+    }
+    this.knowledgeCardTitle.textContent = title || "文化知识";
+    // 内容字段允许 HTML（来自场景内部受信源），用于呈现 <p>/<strong>/<br> 等结构
+    this.knowledgeCardContent.innerHTML = content || "";
+    this.knowledgeCard.classList.add("expanded");
+    this.knowledgeCardToggle.setAttribute("aria-expanded", "true");
+    this.knowledgeCard.classList.remove("is-hidden");
+  };
+
+  DOMLayer.prototype.hideKnowledgeCard = function () {
+    if (!this.knowledgeCard) {
+      return;
+    }
+    this.knowledgeCard.classList.add("is-hidden");
+    this.knowledgeCard.classList.remove("expanded");
+  };
+
+  DOMLayer.prototype.toggleKnowledgeCard = function () {
+    if (!this.knowledgeCard) {
+      return;
+    }
+    this.knowledgeCard.classList.add("expanded");
+    if (this.knowledgeCardToggle) {
+      this.knowledgeCardToggle.setAttribute("aria-expanded", "true");
+    }
+  };
+
+  DOMLayer.prototype.destroyKnowledgeCard = function () {
+    if (this.knowledgeCard && this.knowledgeCard.parentNode) {
+      this.knowledgeCard.parentNode.removeChild(this.knowledgeCard);
+    }
+    this.knowledgeCard = null;
+    this.knowledgeCardTitle = null;
+    this.knowledgeCardContent = null;
+    this.knowledgeCardToggle = null;
   };
 
   NS.DOMLayer = DOMLayer;

@@ -5,6 +5,7 @@
   var NS = global.ChuJiang = global.ChuJiang || {};
   var utils = NS.utils;
   var config = NS.CONFIG.emptyScene;
+  var FONTS = NS.FONT_STACKS;
 
   function EmptyScene(app, manager, meta) {
     this.app = app;
@@ -47,7 +48,7 @@
 
   EmptyScene.prototype.createText = function (text, fontSize, alpha) {
     var label = new PIXI.Text(text, {
-      fontFamily: "Songti SC, STSong, serif",
+      fontFamily: FONTS.text,
       fontSize: fontSize,
       fill: config.titleColor,
       align: "center"

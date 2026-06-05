@@ -4,6 +4,7 @@
 
   var NS = global.ChuJiang = global.ChuJiang || {};
   var utils = NS.utils;
+  var FONTS = NS.FONT_STACKS;
 
   // 各幕提示语、完成语与知识卡片文案
   var SCENE_COPY = {
@@ -18,19 +19,19 @@
       knowledge: "粽子承载纪念与寄情，也是端午最具日常感的符号。"
     },
     drum: {
-      hint: "随鼓而行",
+      hint: "轻触鼓面，推舟前行",
       done: "鼓声已渡",
       knowledge: "龙舟竞渡以鼓为令，众桨同频向前。它从江上追思与乡人合力的传说中生长出来，后来成为端午最有节奏感的节庆场面。"
     },
     poem: {
       hint: "轻触三字，问一行诗",
-      done: "字从水起",
+      done: "",
       knowledge: "屈原诗意与端午记忆相连，是楚江旅程的精神底色。"
     },
     bell: {
-      hint: "轻触编钟，听水面回响",
+      hint: "沿声波点亮三处回声",
       done: "钟已鸣",
-      knowledge: "编钟代表楚地礼乐，声波在水面扩散，连接古今。"
+      knowledge: "编钟礼乐承载荆楚记忆；在这里，它与江声、诗字和端午风物一起合鸣。"
     },
     finale: {
       hint: "点亮四枚端午印记",
@@ -53,6 +54,8 @@
     this.completed = false;
     this.cleanups = [];
     this.state = {};
+    this.viewportWidth = 0;
+    this.viewportHeight = 0;
   }
 
   MVPScene.prototype.onEnter = function () {
@@ -61,6 +64,8 @@
     this.background = new PIXI.Sprite(this.pickBackground());
     utils.fitCover(this.background, this.background.texture, viewport.width, viewport.height);
     this.container.addChild(this.background);
+    this.viewportWidth = viewport.width;
+    this.viewportHeight = viewport.height;
 
     this.overlay = new PIXI.Graphics();
     this.drawOverlay(viewport);
@@ -71,8 +76,11 @@
     this.createCommonText(viewport);
     this.buildScene(viewport);
     this.app.dom.heroCopy.classList.remove("is-muted");
-    this.app.dom.heroCopy.classList.toggle("is-suppressed", this.meta.id === "mugwort");
-    if (this.meta.id !== "mugwort") {
+    this.app.dom.heroCopy.classList.toggle(
+      "is-suppressed",
+      this.meta.id === "bell" || this.meta.id === "finale"
+    );
+    if (this.meta.id !== "mugwort" && this.meta.id !== "poem") {
       this.app.dom.showHint(SCENE_COPY[this.meta.id].hint);
     }
     this.app.pixiApp.stage.addChild(this.container);
@@ -94,6 +102,24 @@
 
   MVPScene.prototype.drawOverlay = function (viewport) {
     this.overlay.clear();
+    if (this.meta.id === "bell") {
+      this.overlay.beginFill(0xf4ecd8, 0.08);
+      this.overlay.drawRect(0, 0, viewport.width, viewport.height);
+      this.overlay.endFill();
+      this.overlay.beginFill(0xe8e1d2, 0.08);
+      this.overlay.drawRect(0, viewport.height * 0.52, viewport.width, viewport.height * 0.48);
+      this.overlay.endFill();
+      return;
+    }
+    if (this.meta.id === "finale") {
+      this.overlay.beginFill(0xf4ecd8, 0.06);
+      this.overlay.drawRect(0, 0, viewport.width, viewport.height);
+      this.overlay.endFill();
+      this.overlay.beginFill(0x16343a, 0.03);
+      this.overlay.drawRect(0, viewport.height * 0.68, viewport.width, viewport.height * 0.32);
+      this.overlay.endFill();
+      return;
+    }
     this.overlay.beginFill(0xeaf4ef, 0.22);
     this.overlay.drawRect(0, 0, viewport.width, viewport.height);
     this.overlay.endFill();
@@ -129,12 +155,22 @@
       this.knowledgeText.style.dropShadowDistance = 0;
       this.knowledgeText.position.set(viewport.width * poemConfig.knowledgeX, viewport.height * poemConfig.knowledgeY);
     }
+    if (this.meta.id === "bell") {
+      this.knowledgeText.style.fontFamily = FONTS.text;
+      this.knowledgeText.style.fontSize = 18;
+      this.knowledgeText.style.lineHeight = 30;
+      this.knowledgeText.style.wordWrapWidth = Math.min(420, viewport.width * 0.26);
+      this.knowledgeText.style.align = "left";
+      this.knowledgeText.style.stroke = 0xf4ecd8;
+      this.knowledgeText.style.strokeThickness = 3;
+      this.knowledgeText.position.set(viewport.width * 0.74, viewport.height * 0.74);
+    }
     this.content.addChild(this.knowledgeText);
   };
 
   MVPScene.prototype.createText = function (text, fontSize, fill, alpha) {
     var label = new PIXI.Text(text, {
-      fontFamily: "Songti SC, STSong, FangSong, Noto Serif CJK SC, serif",
+      fontFamily: FONTS.text,
       fontSize: fontSize,
       fill: fill,
       align: "center",
@@ -165,20 +201,20 @@
     return g;
   };
 
+  var SCENE_BUILDERS = {
+    mugwort: "buildMugwort",
+    wrap: "buildWrap",
+    drum: "buildDrum",
+    poem: "buildPoem",
+    bell: "buildBell",
+    finale: "buildFinale"
+  };
+
   // 按 meta.id 分发到对应分幕构建函数
   MVPScene.prototype.buildScene = function (viewport) {
-    if (this.meta.id === "mugwort") {
-      this.buildMugwort(viewport);
-    } else if (this.meta.id === "wrap") {
-      this.buildWrap(viewport);
-    } else if (this.meta.id === "drum") {
-      this.buildDrum(viewport);
-    } else if (this.meta.id === "poem") {
-      this.buildPoem(viewport);
-    } else if (this.meta.id === "bell") {
-      this.buildBell(viewport);
-    } else {
-      this.buildFinale(viewport);
+    var builderName = SCENE_BUILDERS[this.meta.id] || SCENE_BUILDERS.finale;
+    if (this[builderName]) {
+      this[builderName](viewport);
     }
   };
 
@@ -216,71 +252,183 @@
     }
   };
 
+  MVPScene.prototype.scheduleCall = function (delay, callback) {
+    var scene = this;
+    var call = global.gsap.delayedCall(delay, function () {
+      if (!scene.container) {
+        return;
+      }
+      callback();
+    });
+    this.cleanups.push(function () {
+      call.kill();
+    });
+    return call;
+  };
+
   MVPScene.prototype.setHint = function (text) {
     this.app.dom.showHint(text);
   };
 
-  // 标记完成并展示知识文案与下一幕入口
-  MVPScene.prototype.finish = function (animate) {
+  MVPScene.prototype.goToNextScene = function () {
     var scene = this;
-    if (this.completed && animate) {
+    if (!this.container) {
+      this.manager.goTo(this.index + 1);
       return;
     }
-    this.completed = true;
-    this.manager.completeCurrent();
-    this.app.dom.showCompletion(SCENE_COPY[this.meta.id].done);
-    if (this.meta.id === "wrap") {
-      this.knowledgeText.text = "";
-      this.knowledgeText.alpha = 0;
-      this.app.dom.showAction("入下一幕 →", function () {
+    this.app.dom.clearAction();
+    global.gsap.to(this.container, {
+      alpha: 0,
+      duration: 0.3,
+      ease: "sine.inOut",
+      onComplete: function () {
         scene.manager.goTo(scene.index + 1);
-      });
-      return;
-    }
-    this.knowledgeText.text = SCENE_COPY[this.meta.id].knowledge;
-    if (this.meta.id === "mugwort") {
-      this.knowledgeText.alpha = 0;
-      this.app.dom.showAction("入下一幕 →", function () {
-        scene.manager.goTo(scene.index + 1);
-      });
-      return;
-    }
-    if (this.meta.id === "drum") {
-      this.knowledgeText.alpha = 0;
-      this.app.dom.showAction("入下一幕 →", function () {
-        scene.manager.goTo(scene.index + 1);
-      });
-      if (this.showDrumKnowledgeDot) {
-        this.showDrumKnowledgeDot(animate);
       }
+    });
+  };
+
+  MVPScene.prototype.getSharedAudioContext = function () {
+    var AudioContextClass = global.AudioContext || global.webkitAudioContext;
+    if (!AudioContextClass) {
+      return null;
+    }
+    if (!this.sharedAudioContext) {
+      this.sharedAudioContext = new AudioContextClass();
+    }
+    if (this.sharedAudioContext.state === "suspended" && this.sharedAudioContext.resume) {
+      this.sharedAudioContext.resume();
+    }
+    return this.sharedAudioContext;
+  };
+
+  MVPScene.prototype.playSoftTone = function (frequency, duration, peakGain) {
+    var context = this.getSharedAudioContext();
+    if (!context) {
       return;
     }
-    if (this.meta.id === "poem") {
-      this.knowledgeText.text = "";
-      this.knowledgeText.alpha = 0;
-      this.app.dom.showAction("入下一幕 →", function () {
+    var now = context.currentTime;
+    var oscillator = context.createOscillator();
+    var gain = context.createGain();
+    oscillator.type = "sine";
+    oscillator.frequency.setValueAtTime(frequency, now);
+    oscillator.frequency.exponentialRampToValueAtTime(Math.max(40, frequency * 0.72), now + duration);
+    gain.gain.setValueAtTime(0.0001, now);
+    gain.gain.exponentialRampToValueAtTime(peakGain, now + 0.02);
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+    oscillator.connect(gain);
+    gain.connect(context.destination);
+    oscillator.start(now);
+    oscillator.stop(now + duration + 0.04);
+  };
+
+  MVPScene.prototype.closeSharedAudio = function () {
+    if (!this.sharedAudioContext || !this.sharedAudioContext.close) {
+      return;
+    }
+    this.sharedAudioContext.close();
+    this.sharedAudioContext = null;
+  };
+
+  var FINISH_HANDLERS = {
+    mugwort: function (scene) {
+      scene.knowledgeText.alpha = 0;
+      scene.app.dom.hideHint();
+      scene.app.dom.showAction("入下一幕 →", function () {
+        scene.goToNextScene();
+      });
+    },
+    wrap: function (scene) {
+      scene.knowledgeText.text = "";
+      scene.knowledgeText.alpha = 0;
+      if (scene.showWrapKnowledgeDot) {
+        scene.showWrapKnowledgeDot(utils.getViewport(scene.app));
+      }
+      scene.app.dom.showAction("入下一幕 →", function () {
+        scene.goToNextScene();
+      });
+    },
+    drum: function (scene, animate) {
+      scene.knowledgeText.alpha = 0;
+      scene.app.dom.showAction("入下一幕 →", function () {
+        scene.goToNextScene();
+      });
+      if (scene.showDrumKnowledgeDot) {
+        scene.showDrumKnowledgeDot(animate);
+      }
+    },
+    bell: function (scene, animate) {
+      scene.knowledgeText.alpha = 0;
+      scene.app.dom.showAction("入下一幕 →", function () {
+        if (scene.playBellExitTransition) {
+          scene.playBellExitTransition();
+        } else {
+          scene.manager.goTo(scene.index + 1);
+        }
+      });
+      if (scene.prepareBellCompletedState) {
+        scene.prepareBellCompletedState(animate);
+      }
+      if (scene.showBellKnowledgeDot) {
+        scene.showBellKnowledgeDot(animate);
+      }
+    },
+    poem: function (scene) {
+      scene.knowledgeText.text = "";
+      scene.knowledgeText.alpha = 0;
+      scene.app.dom.showAction("入下一幕 →", function () {
         if (scene.playPoemTransition) {
           scene.playPoemTransition();
         } else {
           scene.manager.goTo(scene.index + 1);
         }
       });
+    },
+    finale: function (scene, animate) {
+      if (scene.showFinaleCompletion) {
+        scene.showFinaleCompletion(animate);
+        return;
+      }
+      scene.knowledgeText.alpha = animate === false ? 0.86 : 0;
+    }
+  };
+
+  // 标记完成并展示知识文案与下一幕入口
+  MVPScene.prototype.finish = function (animate) {
+    if (this.completed && animate) {
       return;
     }
-    this.knowledgeText.alpha = animate === false ? 0.86 : 0;
-    if (animate !== false) {
-      global.gsap.to(this.knowledgeText, { alpha: 0.86, duration: 0.45 });
+    this.completed = true;
+    this.manager.completeCurrent();
+    this.app.dom.showCompletion(SCENE_COPY[this.meta.id].done);
+    if (this.meta.id !== "wrap" && this.meta.id !== "poem") {
+      this.knowledgeText.text = SCENE_COPY[this.meta.id].knowledge;
     }
-    if (this.meta.id === "finale") {
-      this.app.dom.showAction("重游此程", function () {
-        scene.manager.completed = scene.manager.completed.map(function () { return false; });
-        scene.manager.goTo(0);
+    var handler = FINISH_HANDLERS[this.meta.id] || function (scene) {
+      scene.knowledgeText.alpha = animate === false ? 0.86 : 0;
+      if (animate !== false) {
+        global.gsap.to(scene.knowledgeText, { alpha: 0.86, duration: 0.45 });
+      }
+      scene.app.dom.showAction("入下一幕 →", function () {
+        scene.goToNextScene();
       });
-    } else {
-      this.app.dom.showAction("入下一幕 →", function () {
-        scene.manager.goTo(scene.index + 1);
-      });
+    };
+    handler(this, animate);
+  };
+
+  MVPScene.prototype.showTimedKnowledgeText = function (text, alpha, duration) {
+    if (!this.knowledgeText) {
+      return;
     }
+    global.gsap.killTweensOf(this.knowledgeText);
+    this.knowledgeText.text = text;
+    this.knowledgeText.alpha = 0;
+    global.gsap.to(this.knowledgeText, { alpha: alpha, duration: 0.45, ease: "sine.out" });
+    global.gsap.to(this.knowledgeText, {
+      alpha: 0,
+      duration: 0.45,
+      delay: duration,
+      ease: "sine.in"
+    });
   };
 
   MVPScene.prototype.onUpdate = function () {
@@ -288,23 +436,277 @@
       return;
     }
     var viewport = utils.getViewport(this.app);
-    utils.fitCover(this.background, this.background.texture, viewport.width, viewport.height);
-    this.drawOverlay(viewport);
+    var viewportChanged = viewport.width !== this.viewportWidth || viewport.height !== this.viewportHeight;
+    if (viewportChanged) {
+      this.viewportWidth = viewport.width;
+      this.viewportHeight = viewport.height;
+      utils.fitCover(this.background, this.background.texture, viewport.width, viewport.height);
+      this.drawOverlay(viewport);
+    }
     if (this.meta.id === "mugwort" && this.updateMugwortLayout) {
       this.updateMugwortLayout(viewport);
+    }
+    if (viewportChanged && this.meta.id === "finale" && this.updateFinaleLayout) {
+      this.updateFinaleLayout(viewport);
+    }
+    if (viewportChanged && this.meta.id === "drum" && this.updateDrumLayout) {
+      this.updateDrumLayout(viewport);
     }
   };
 
   MVPScene.prototype.onExit = function () {
+    if (this.meta.id === "bell" && this.closeBellAudio) {
+      this.closeBellAudio();
+    }
+    if (this.meta.id === "drum" && this.closeDrumAudio) {
+      this.closeDrumAudio();
+    }
+    this.closeSharedAudio();
     this.cleanups.forEach(function (cleanup) { cleanup(); });
     this.cleanups = [];
+    this.destroyPanels();
     this.killTweens(this.container);
     this.app.dom.clearAction();
     this.app.dom.heroCopy.classList.remove("is-suppressed");
+    if (this.app.dom.hidePanelCaption) {
+      this.app.dom.hidePanelCaption();
+    }
+    if (this.app.dom.destroyKnowledgeCard) {
+      this.app.dom.destroyKnowledgeCard();
+    }
     if (this.container) {
       this.app.pixiApp.stage.removeChild(this.container);
       this.container.destroy({ children: true });
       this.container = null;
+    }
+  };
+
+  // ============================================================
+  // PanelSwitcher：面板切换基础设施
+  // ------------------------------------------------------------
+  // 各幕可调用 initPanels() 创建一组同尺寸面板（每个面板自带背景
+  // 与 buildFn 构造的内容），通过 switchToPanel() 实现
+  // 当前淡出+左移、下一帧从右滑入的丝滑切换；
+  // 支持 startAutoPlay()/stopAutoPlay() 顺序自动播放。
+  // ============================================================
+  MVPScene.prototype.initPanels = function (panelConfigs) {
+    var scene = this;
+    var viewport = utils.getViewport(this.app);
+    if (!this.content) {
+      return;
+    }
+    this.destroyPanels();
+    this.panels = [];
+    this.panelConfigs = panelConfigs || [];
+    this.panelLayer = new PIXI.Container();
+    this.content.addChild(this.panelLayer);
+
+    (panelConfigs || []).forEach(function (config, idx) {
+      var panel = new PIXI.Container();
+      panel.alpha = idx === 0 ? 1 : 0;
+      panel.visible = idx === 0;
+      panel.position.x = 0;
+      if (config && config.bgKey) {
+        var texture = scene.app.assets.get(config.bgKey);
+        if (texture) {
+          var bg = new PIXI.Sprite(texture);
+          utils.fitCover(bg, texture, viewport.width, viewport.height);
+          panel.addChild(bg);
+          panel.background = bg;
+        }
+      }
+      var contentLayer = new PIXI.Container();
+      panel.addChild(contentLayer);
+      panel.contentLayer = contentLayer;
+      panel.config = config || {};
+      if (config && typeof config.buildFn === "function") {
+        try {
+          config.buildFn.call(scene, contentLayer, viewport, idx);
+        } catch (err) {
+          // 单面板构建失败不应阻断其它面板
+          if (global.console && global.console.warn) {
+            global.console.warn("[PanelSwitcher] panel buildFn error", err);
+          }
+        }
+      }
+      scene.panelLayer.addChild(panel);
+      scene.panels.push(panel);
+    });
+
+    this.currentPanelIndex = 0;
+    this.panelSwitching = false;
+    this.autoPlayCall = null;
+
+    // 显示第一个面板对应的 DOM 文案与圆点
+    var first = this.panelConfigs[0];
+    if (first && this.app && this.app.dom) {
+      if (first.title || first.description) {
+        this.app.dom.showPanelCaption(first.title || "", first.description || "");
+      }
+      if (this.panels.length > 1 && this.app.dom.createPanelIndicator) {
+        this.app.dom.createPanelIndicator(this.panels.length, function (idx) {
+          scene.switchToPanel(idx);
+        });
+        this.app.dom.updatePanelIndicator(0);
+      }
+    }
+  };
+
+  MVPScene.prototype.switchToPanel = function (index, direction) {
+    var scene = this;
+    if (!this.panels || !this.panels.length) {
+      return;
+    }
+    if (index < 0 || index >= this.panels.length) {
+      return;
+    }
+    if (index === this.currentPanelIndex || this.panelSwitching) {
+      return;
+    }
+    var dir = direction === "left" ? "left" : (direction === "right" ? "right" : null);
+    if (!dir) {
+      dir = index > this.currentPanelIndex ? "right" : "left";
+    }
+    var fromPanel = this.panels[this.currentPanelIndex];
+    var toPanel = this.panels[index];
+    if (!fromPanel || !toPanel) {
+      return;
+    }
+    var offset = 60;
+    var fromExitX = dir === "right" ? -offset : offset;
+    var toEnterX = dir === "right" ? offset : -offset;
+
+    this.panelSwitching = true;
+    toPanel.visible = true;
+    toPanel.alpha = 0;
+    toPanel.position.x = toEnterX;
+
+    global.gsap.killTweensOf(fromPanel);
+    global.gsap.killTweensOf(fromPanel.position);
+    global.gsap.killTweensOf(toPanel);
+    global.gsap.killTweensOf(toPanel.position);
+
+    global.gsap.to(fromPanel, {
+      alpha: 0,
+      duration: 0.8,
+      ease: "power2.inOut",
+      onComplete: function () {
+        if (!fromPanel.destroyed) {
+          fromPanel.visible = false;
+          fromPanel.position.x = 0;
+        }
+      }
+    });
+    global.gsap.to(fromPanel.position, {
+      x: fromExitX,
+      duration: 0.8,
+      ease: "power2.inOut"
+    });
+    global.gsap.to(toPanel, {
+      alpha: 1,
+      duration: 0.8,
+      ease: "power2.inOut"
+    });
+    global.gsap.to(toPanel.position, {
+      x: 0,
+      duration: 0.8,
+      ease: "power2.inOut",
+      onComplete: function () {
+        scene.panelSwitching = false;
+      }
+    });
+
+    this.currentPanelIndex = index;
+
+    // 同步切换文案与指示器
+    var nextConfig = this.panelConfigs[index] || {};
+    if (this.app && this.app.dom) {
+      if (this.app.dom.showPanelCaption) {
+        this.app.dom.showPanelCaption(nextConfig.title || "", nextConfig.description || "");
+      }
+      if (this.app.dom.updatePanelIndicator) {
+        this.app.dom.updatePanelIndicator(index);
+      }
+    }
+  };
+
+  MVPScene.prototype.startAutoPlay = function (intervalMS) {
+    var scene = this;
+    if (!this.panels || this.panels.length < 2) {
+      return;
+    }
+    this.stopAutoPlay();
+    var interval = (intervalMS && intervalMS > 0) ? intervalMS / 1000 : 5;
+    var tick = function () {
+      if (!scene.panels || !scene.panels.length) {
+        return;
+      }
+      var next = scene.currentPanelIndex + 1;
+      if (next >= scene.panels.length) {
+        scene.stopAutoPlay();
+        return;
+      }
+      scene.switchToPanel(next, "right");
+      if (next < scene.panels.length - 1) {
+        scene.autoPlayCall = global.gsap.delayedCall(interval, tick);
+      } else {
+        scene.autoPlayCall = null;
+      }
+    };
+    this.autoPlayCall = global.gsap.delayedCall(interval, tick);
+    // 在 onExit 时一并清理
+    this.cleanups.push(function () { scene.stopAutoPlay(); });
+  };
+
+  MVPScene.prototype.stopAutoPlay = function () {
+    if (this.autoPlayCall) {
+      this.autoPlayCall.kill();
+      this.autoPlayCall = null;
+    }
+  };
+
+  MVPScene.prototype.getCurrentPanelIndex = function () {
+    return this.currentPanelIndex || 0;
+  };
+
+  MVPScene.prototype.getPanelCount = function () {
+    return this.panels ? this.panels.length : 0;
+  };
+
+  MVPScene.prototype.destroyPanels = function () {
+    this.stopAutoPlay();
+    if (this.panels && this.panels.length) {
+      this.panels.forEach(function (panel) {
+        if (panel && !panel.destroyed) {
+          global.gsap.killTweensOf(panel);
+          if (panel.position) {
+            global.gsap.killTweensOf(panel.position);
+          }
+          if (panel.parent) {
+            panel.parent.removeChild(panel);
+          }
+          panel.destroy({ children: true });
+        }
+      });
+    }
+    this.panels = [];
+    this.panelConfigs = [];
+    if (this.panelLayer && !this.panelLayer.destroyed) {
+      if (this.panelLayer.parent) {
+        this.panelLayer.parent.removeChild(this.panelLayer);
+      }
+      this.panelLayer.destroy({ children: true });
+    }
+    this.panelLayer = null;
+    this.currentPanelIndex = 0;
+    this.panelSwitching = false;
+    if (this.app && this.app.dom) {
+      if (this.app.dom.hidePanelCaption) {
+        this.app.dom.hidePanelCaption();
+      }
+      if (this.app.dom.destroyPanelIndicator) {
+        this.app.dom.destroyPanelIndicator();
+      }
     }
   };
 

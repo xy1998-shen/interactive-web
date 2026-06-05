@@ -1,0 +1,97 @@
+{
+  "version": "1.0.0",
+  "lastScanned": 1780647807694,
+  "projectRoot": "/Users/eleme/Desktop/Interactive Web Design Competition",
+  "techStack": {
+    "languages": [],
+    "frameworks": [],
+    "packageManager": null,
+    "runtime": null
+  },
+  "build": {
+    "buildCommand": null,
+    "testCommand": null,
+    "lintCommand": null,
+    "devCommand": null,
+    "scripts": {}
+  },
+  "conventions": {
+    "namingStyle": null,
+    "importStyle": null,
+    "testPattern": null,
+    "fileOrganization": null
+  },
+  "structure": {
+    "isMonorepo": false,
+    "workspaces": [],
+    "mainDirectories": [
+      "assets"
+    ],
+    "gitBranches": null
+  },
+  "customNotes": [],
+  "directoryMap": {
+    "assets": {
+      "path": "assets",
+      "purpose": "Static assets",
+      "fileCount": 2,
+      "lastAccessed": 1780647807589,
+      "keyFiles": [
+        "favicon.png",
+        "prompt-log.md"
+      ]
+    },
+    "css": {
+      "path": "css",
+      "purpose": null,
+      "fileCount": 1,
+      "lastAccessed": 1780647807589,
+      "keyFiles": [
+        "style.css"
+      ]
+    },
+    "doc": {
+      "path": "doc",
+      "purpose": null,
+      "fileCount": 0,
+      "lastAccessed": 1780647807590,
+      "keyFiles": []
+    },
+    "js": {
+      "path": "js",
+      "purpose": null,
+      "fileCount": 7,
+      "lastAccessed": 1780647807590,
+      "keyFiles": [
+        "app.js",
+        "asset-loader.js",
+        "config.js",
+        "constants.js",
+        "dom-layer.js"
+      ]
+    },
+    "libs": {
+      "path": "libs",
+      "purpose": null,
+      "fileCount": 2,
+      "lastAccessed": 1780647807590,
+      "keyFiles": [
+        "gsap.min.js",
+        "pixi.min.js"
+      ]
+    },
+    "tmp": {
+      "path": "tmp",
+      "purpose": null,
+      "fileCount": 3,
+      "lastAccessed": 1780647807590,
+      "keyFiles": [
+        "screenshot-1780642833599.png",
+        "screenshot-1780643165941.png",
+        "screenshot-1780647492136.png"
+      ]
+    }
+  },
+  "hotPaths": [],
+  "userDirectives": []
+}

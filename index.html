@@ -8,6 +8,9 @@
     <link rel="stylesheet" href="css/style.css">
   </head>
   <body>
+    <noscript>
+      <div class="noscript-message">请启用 JavaScript 后体验《楚江寻艾》。</div>
+    </noscript>
     <main id="app" aria-label="楚江寻艾互动体验">
       <canvas id="stage" aria-hidden="true"></canvas>
 
@@ -30,7 +33,7 @@
           <div class="scroll-paper">
             <p class="story-line">楚江晨雾未散，舟行旧水之间。两千余年以前，三闾大夫屈原曾在楚地行吟，把家国之忧写进江风。</p>
             <p class="story-line">《离骚》有言：“路漫漫其修远兮，吾将上下而求索。”那一声求索，后来随五月江水，被一代代人记起。</p>
-            <p class="story-line">相传屈原沉汨罗后，乡人竞舟追寻，以角黍投江，愿鱼龙不伤其身；又悬艾佩兰，以草木清气护住盛夏门户。</p>
+            <p class="story-line">相传屈原沉汨罗后，乡人竞舟追寻，以角黍投江，愿鱼龙不伤其身；湖北秭归至今仍有游江招魂的旧俗回响。</p>
             <p class="story-line">于是端午不只是一日节令，也是后人把忠贞、忧思与祝愿，一年年送回江上的方式。</p>
             <button id="story-next" class="story-next is-hidden" type="button">入下一幕 →</button>
           </div>
@@ -100,20 +103,20 @@
     <script src="libs/gsap.min.js"></script>
 
     <!-- 基础模块：常量、配置、工具 -->
-    <script src="js/constants.js"></script>
-    <script src="js/config.js"></script>
+    <script src="js/constants.js?v=20260605-drum"></script>
+    <script src="js/config.js?v=20260605-drum"></script>
     <script src="js/utils.js"></script>
-    <script src="js/asset-loader.js"></script>
+    <script src="js/asset-loader.js?v=20260605-drum"></script>
     <script src="js/dom-layer.js"></script>
 
     <!-- 场景：基类必须先于各幕加载 -->
     <script src="js/scenes/empty-scene.js"></script>
-    <script src="js/scenes/base-scene.js"></script>
+    <script src="js/scenes/base-scene.js?v=20260605-drum"></script>
     <!-- 各幕交互（挂载到 base-scene 原型） -->
     <script src="js/scenes/mugwort-scene.js"></script>
     <script src="js/scenes/wrap-scene.js"></script>
-    <script src="js/scenes/drum-effects.js"></script>
-    <script src="js/scenes/drum-scene.js"></script>
+    <script src="js/scenes/drum-effects.js?v=20260605-drum"></script>
+    <script src="js/scenes/drum-scene.js?v=20260605-drum"></script>
     <script src="js/scenes/poem-scene.js"></script>
     <script src="js/scenes/bell-scene.js"></script>
     <script src="js/scenes/finale-scene.js"></script>

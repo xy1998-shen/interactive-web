@@ -12,7 +12,13 @@
       "Bash(python3 *)",
       "Bash(node --check js/scenes/intro-scene.js)",
       "Bash(node --check js/scenes/mugwort-scene.js)",
-      "Bash(node --check js/scenes/base-scene.js)"
+      "Bash(node --check js/scenes/base-scene.js)",
+      "Bash(cp \"/Users/eleme/Downloads/ mugwort-panel-1-hang.png.png\" \"/Users/eleme/Desktop/Interactive Web Design Competition/assets/backgrounds/mugwort-panel-1-hang.png\")",
+      "Bash(cp \"/Users/eleme/Downloads/ mugwort-panel-2-boil.png.png\" \"/Users/eleme/Desktop/Interactive Web Design Competition/assets/backgrounds/mugwort-panel-2-boil.png\")",
+      "Bash(cp \"/Users/eleme/Downloads/mugwort-panel-3-cake.png.png\" \"/Users/eleme/Desktop/Interactive Web Design Competition/assets/backgrounds/mugwort-panel-3-cake.png\")",
+      "Bash(cp \"/Users/eleme/Downloads/ mugwort-panel-4-sachet.png .png\" \"/Users/eleme/Desktop/Interactive Web Design Competition/assets/backgrounds/mugwort-panel-4-sachet.png\")",
+      "Bash(node -c js/scenes/wrap-scene.js)",
+      "Bash(node -c js/scenes/drum-scene.js)"
     ]
   }
 }

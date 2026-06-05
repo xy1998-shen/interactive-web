@@ -1,518 +1,432 @@
-// 第三幕裹青：点击后自动合叶、束线与粽形显现。
+// 第三幕裹青：4 面板顺序播放（备料 / 裹粽 / 蒸煮 / 分食）+ 文化知识卡。
+// 依赖 base-scene.js 提供的 PanelSwitcher API（initPanels / switchToPanel /
+// startAutoPlay / destroyPanels）以及 dom-layer 的 panel-caption / 指示器 / 知识卡。
 (function (global) {
   "use strict";
 
   var NS = global.ChuJiang = global.ChuJiang || {};
-  var CONFIG = NS.CONFIG.wrap;
 
-  NS.MVPScene.prototype.buildWrap = function (viewport) {
+  // ---------------- 面板配置 ----------------
+  // 直接写在场景内部，按任务约束不修改 config.js
+  var WRAP_PANELS = [
+    {
+      bgKey: "wrapPanel1Prep",
+      title: "备料",
+      description: "箬叶洗净，糯米浸透。端午前夕，家家户户忙碌着同一件事。",
+      buildFn: buildPanel1Ripples
+    },
+    {
+      bgKey: "wrapPanel2Wrap",
+      title: "裹粽",
+      description: "两片叶交叠成斗，米实馅满，丝线一缠。手艺在指尖代代相传。",
+      buildFn: buildPanel2Threads
+    },
+    {
+      bgKey: "wrapPanel3Steam",
+      title: "蒸煮",
+      description: "文火慢煮数时辰，粽香渐浓。等待，也是节日仪式的一部分。",
+      buildFn: buildPanel3Steam
+    },
+    {
+      bgKey: "wrapPanel4Eat",
+      title: "分食",
+      description: "剥开青叶，糯香扑鼻。孩子的笑脸，是端午最好的注脚。",
+      buildFn: buildPanel4Glow
+    }
+  ];
+
+  // 文化知识卡内容（HTML 格式，由 dom-layer.showKnowledgeCard 注入）
+  var KNOWLEDGE_TITLE = "端午裹青 · 粽俗拾趣";
+  var KNOWLEDGE_CONTENT = [
+    "<p><strong>为何端午裹青？</strong></p>",
+    "<p>青色粽叶寓意生机，取“青”字谐音“清”，象征驱毒辟邪、洁净迎夏。将五谷裹入青叶，是对丰收与平安的祝愿。</p>",
+    "<br>",
+    "<p><strong>各地风俗差异</strong></p>",
+    "<p>• 北方：黄米红枣甜粽，质朴敦厚</p>",
+    "<p>• 江浙：鲜肉蛋黄咸粽，醇厚鲜美</p>",
+    "<p>• 闽粤：碱水粽烧肉粽，独具风味</p>",
+    "<p>• 客家：灰水粽艾叶粽，草木清香</p>",
+    "<p>• 西南：竹筒粽草木灰粽，山野之趣</p>"
+  ].join("");
+
+  // 自动播放配置
+  var AUTOPLAY_INTERVAL_MS = 5000;
+  var KNOWLEDGE_DWELL_SEC = 3;   // 第 4 面板停留多久后展示知识卡
+  var COMPLETE_DELAY_SEC = 3;    // 知识卡展示后多久标记完成
+
+  // ---------------- 各面板动态元素构建 ----------------
+  // 这些函数以 scene 为 this，会被 initPanels 在创建面板时调用一次。
+  // 主要做两件事：把静态 GSAP 动效挂上；把需要每帧更新的数据塞进 scene.state。
+  function buildPanel1Ripples(layer, viewport) {
+    // 备料只做桌面材料的轻微呼吸：水盆涟漪、箬叶压影和少量米粒高光。
     var scene = this;
-    var group = new PIXI.Container();
-    this.content.addChild(group);
+    var cx = viewport.width * 0.47;
+    var cy = viewport.height * 0.61;
+    var ringCount = 2;
+    for (var i = 0; i < ringCount; i++) {
+      (function (idx) {
+        var ring = new PIXI.Graphics();
+        ring.lineStyle(1, 0xd8ded1, 0.42);
+        ring.drawEllipse(0, 0, 32, 12);
+        ring.position.set(cx, cy);
+        layer.addChild(ring);
+        var period = 5.6;
+        var delay = idx * (period / ringCount);
+        var scaleTween = global.gsap.fromTo(ring.scale,
+          { x: 0.45, y: 0.45 },
+          { x: 2.6, y: 2.6, duration: period, delay: delay, repeat: -1, ease: "sine.out" }
+        );
+        var alphaTween = global.gsap.fromTo(ring,
+          { alpha: 0.38 },
+          { alpha: 0, duration: period, delay: delay, repeat: -1, ease: "sine.out" }
+        );
+        scene.cleanups.push(function () { scaleTween.kill(); alphaTween.kill(); });
+      }(i));
+    }
 
-    var centerX = viewport.width * CONFIG.centerX;
-    var centerY = viewport.height * CONFIG.centerY;
-
-    // 目标呼吸光点
-    var targetDot = new PIXI.Graphics();
-    targetDot.beginFill(0xc8a45d, 0.5);
-    targetDot.drawCircle(0, 0, CONFIG.targetRadius * 0.4);
-    targetDot.endFill();
-    targetDot.lineStyle(1.5, 0xc8a45d, 0.3);
-    targetDot.drawCircle(0, 0, CONFIG.targetRadius);
-    targetDot.position.set(centerX, centerY);
-    group.addChild(targetDot);
-
-    var breathPulse = global.gsap.to(targetDot, {
-      alpha: CONFIG.targetBreathAlpha[1],
-      duration: CONFIG.targetBreathDuration,
+    var leafShadow = new PIXI.Graphics();
+    leafShadow.beginFill(0x5f7448, 0.12);
+    leafShadow.drawEllipse(0, 0, viewport.width * 0.12, viewport.height * 0.025);
+    leafShadow.endFill();
+    leafShadow.position.set(viewport.width * 0.51, viewport.height * 0.68);
+    leafShadow.rotation = -0.08;
+    layer.addChild(leafShadow);
+    var shadowTween = global.gsap.to(leafShadow, {
+      alpha: 0.2,
+      duration: 3.4,
       yoyo: true,
       repeat: -1,
       ease: "sine.inOut"
     });
-    targetDot.alpha = CONFIG.targetBreathAlpha[0];
+    scene.cleanups.push(function () { shadowTween.kill(); });
 
-    // 粽叶
-    var left = this.createSprite("leafLeft", CONFIG.leafWidthRatio, CONFIG.leftLeafX, CONFIG.leafY, viewport);
-    left.eventMode = "none";
-    var right = this.createSprite("leafRight", CONFIG.leafWidthRatio, CONFIG.rightLeafX, CONFIG.leafY, viewport);
-    right.eventMode = "none";
+    for (var g = 0; g < 5; g++) {
+      var grain = new PIXI.Graphics();
+      grain.beginFill(0xf1e8d2, 0.44);
+      grain.drawEllipse(0, 0, 2.2, 1.1);
+      grain.endFill();
+      grain.position.set(
+        viewport.width * (0.42 + g * 0.035),
+        viewport.height * (0.66 + (g % 2) * 0.025)
+      );
+      grain.rotation = -0.2 + g * 0.11;
+      layer.addChild(grain);
+      var grainTween = global.gsap.to(grain, {
+        alpha: 0.15,
+        duration: 2.2 + g * 0.18,
+        yoyo: true,
+        repeat: -1,
+        ease: "sine.inOut",
+        delay: g * 0.26
+      });
+      scene.cleanups.push((function (t) { return function () { t.kill(); }; }(grainTween)));
+    }
+  }
 
-    var zongzi = this.createSprite("zongzi", CONFIG.zongziWidthRatio, CONFIG.centerX, CONFIG.centerY, viewport);
-    zongzi.alpha = 0;
-    zongzi.eventMode = "none";
+  function buildPanel2Threads(layer, viewport) {
+    // 裹粽不再使用绕中心飞行的粒子，改为青线弧、叶片压合和手作阴影。
+    var scene = this;
+    var cx = viewport.width * 0.52;
+    var cy = viewport.height * 0.56;
 
-    // 米粒粒子容器
-    var particles = new PIXI.Container();
-    group.addChild(particles);
+    var leafBreath = new PIXI.Graphics();
+    leafBreath.beginFill(0x5f7448, 0.1);
+    leafBreath.drawEllipse(0, 0, viewport.width * 0.15, viewport.height * 0.045);
+    leafBreath.endFill();
+    leafBreath.position.set(cx, cy + viewport.height * 0.08);
+    leafBreath.rotation = 0.06;
+    layer.addChild(leafBreath);
+    var leafTween = global.gsap.to(leafBreath, {
+      alpha: 0.18,
+      rotation: -0.025,
+      duration: 3.2,
+      yoyo: true,
+      repeat: -1,
+      ease: "sine.inOut"
+    });
+    scene.cleanups.push(function () { leafTween.kill(); });
 
-    // 点击触发层
-    var tapArea = new PIXI.Graphics();
-    tapArea.beginFill(0x000000, 0.001);
-    tapArea.drawRect(0, 0, viewport.width, viewport.height);
-    tapArea.endFill();
-    tapArea.eventMode = "static";
-    tapArea.cursor = "pointer";
-    this.content.addChild(tapArea);
+    var threadLines = [];
+    for (var i = 0; i < 3; i++) {
+      var line = new PIXI.Graphics();
+      line.lineStyle(2 - i * 0.25, i === 1 ? 0xc8a45d : 0xe8d39d, 0.28);
+      line.moveTo(-viewport.width * (0.08 + i * 0.01), viewport.height * (0.025 - i * 0.006));
+      line.bezierCurveTo(
+        -viewport.width * 0.025,
+        -viewport.height * (0.035 + i * 0.002),
+        viewport.width * 0.04,
+        -viewport.height * (0.022 - i * 0.004),
+        viewport.width * (0.09 + i * 0.008),
+        viewport.height * (0.018 + i * 0.004)
+      );
+      line.position.set(cx, cy + i * 10);
+      line.rotation = -0.22 + i * 0.18;
+      layer.addChild(line);
+      threadLines.push({
+        sprite: line,
+        baseAlpha: 0.22 + i * 0.08,
+        baseRotation: line.rotation,
+        phase: i * 0.72
+      });
+    }
 
-    // 状态
+    var tuckShadow = new PIXI.Graphics();
+    tuckShadow.beginFill(0x101c1b, 0.1);
+    tuckShadow.drawEllipse(0, 0, viewport.width * 0.11, viewport.height * 0.018);
+    tuckShadow.endFill();
+    tuckShadow.position.set(cx + viewport.width * 0.015, cy + viewport.height * 0.12);
+    layer.addChild(tuckShadow);
+
+    scene.state.wrapDynamics = scene.state.wrapDynamics || {};
+    scene.state.wrapDynamics.panel2 = {
+      threadLines: threadLines,
+      tuckShadow: tuckShadow,
+      t: 0
+    };
+  }
+
+  function buildPanel3Steam(layer, viewport) {
+    // 蒸煮使用柔软蒸汽线和锅口暖光，避免散点漂浮。
+    var scene = this;
+    var cx = viewport.width * 0.5;
+    var stoveY = viewport.height * 0.68;
+
+    var warm = new PIXI.Graphics();
+    warm.beginFill(0xd9a65a, 0.16);
+    warm.drawEllipse(0, 0, viewport.width * 0.18, viewport.height * 0.055);
+    warm.endFill();
+    warm.position.set(cx, stoveY + viewport.height * 0.075);
+    warm.blendMode = PIXI.BLEND_MODES.ADD;
+    layer.addChild(warm);
+    var warmTween = global.gsap.to(warm, {
+      alpha: 0.28,
+      duration: 2.4,
+      yoyo: true,
+      repeat: -1,
+      ease: "sine.inOut"
+    });
+    scene.cleanups.push(function () { warmTween.kill(); });
+
+    var steamLines = [];
+    for (var s = 0; s < 6; s++) {
+      var steam = new PIXI.Graphics();
+      steam.lineStyle(2, 0xf4ecd8, 0.26);
+      steam.moveTo(0, 42);
+      steam.bezierCurveTo(-18, 12, 18, -12, 2, -48);
+      steam.position.set(cx + (s - 2.5) * viewport.width * 0.028, stoveY);
+      steam.scale.set(0.82 + s * 0.04);
+      layer.addChild(steam);
+      steamLines.push({
+        sprite: steam,
+        baseX: steam.x,
+        baseY: steam.y,
+        phase: s * 0.55,
+        speed: 0.45 + s * 0.035
+      });
+    }
+    scene.state.wrapDynamics = scene.state.wrapDynamics || {};
+    scene.state.wrapDynamics.panel3 = { steamLines: steamLines, t: 0 };
+  }
+
+  function buildPanel4Glow(layer, viewport) {
+    // 分食面板只保留窗外暖光和桌面米香，不铺满金色粒子。
+    var scene = this;
+    var cx = viewport.width * 0.5;
+    var cy = viewport.height * 0.5;
+
+    var glow = new PIXI.Graphics();
+    glow.beginFill(0xffd28a, 1);
+    glow.drawCircle(0, 0, viewport.width * 0.46);
+    glow.endFill();
+    glow.position.set(cx, cy);
+    glow.alpha = 0.05;
+    glow.blendMode = PIXI.BLEND_MODES.ADD;
+    layer.addChild(glow);
+    var glowTween = global.gsap.to(glow, {
+      alpha: 0.15,
+      duration: 2.6,
+      yoyo: true,
+      repeat: -1,
+      ease: "sine.inOut"
+    });
+    scene.cleanups.push(function () { glowTween.kill(); });
+
+    var tableSheen = new PIXI.Graphics();
+    tableSheen.beginFill(0xf1e8d2, 0.11);
+    tableSheen.drawEllipse(0, 0, viewport.width * 0.18, viewport.height * 0.036);
+    tableSheen.endFill();
+    tableSheen.position.set(viewport.width * 0.49, viewport.height * 0.68);
+    tableSheen.rotation = -0.12;
+    tableSheen.blendMode = PIXI.BLEND_MODES.ADD;
+    layer.addChild(tableSheen);
+    var sheenTween = global.gsap.to(tableSheen, {
+      alpha: 0.22,
+      duration: 3,
+      yoyo: true,
+      repeat: -1,
+      ease: "sine.inOut"
+    });
+    scene.cleanups.push(function () { sheenTween.kill(); });
+
+    for (var i = 0; i < 4; i++) {
+      var scent = new PIXI.Graphics();
+      scent.lineStyle(1.4, 0xf1e8d2, 0.18);
+      scent.moveTo(0, 18);
+      scent.bezierCurveTo(-10, 4, 9, -10, 0, -24);
+      scent.position.set(viewport.width * (0.43 + i * 0.045), viewport.height * (0.61 + (i % 2) * 0.025));
+      layer.addChild(scent);
+      var scentTween = global.gsap.to(scent, {
+        alpha: 0.04,
+        y: scent.y - 18,
+        duration: 2.8 + i * 0.25,
+        yoyo: true,
+        repeat: -1,
+        ease: "sine.inOut",
+        delay: i * 0.22
+      });
+      scene.cleanups.push((function (t) { return function () { t.kill(); }; }(scentTween)));
+    }
+  }
+
+  // ---------------- 注入到 MVPScene 原型 ----------------
+  // 注：scene-manager 始终实例化 NS.MVPScene，并通过 meta.id ("wrap")
+  // 分发到 buildWrap，所以这里继续走 monkey-patch 模式与现有架构对齐；
+  // 同时按任务约束在文件末尾暴露 NS.WrapScene 类。
+
+  // 入场：搭建 4 面板 + 顺序播放 + 第 4 面板触达探测
+  NS.MVPScene.prototype.buildWrap = function (viewport) {
+    var scene = this;
     this.state.wrap = {
-      step: 0,
-      group: group,
-      left: left,
-      right: right,
-      zongzi: zongzi,
-      targetDot: targetDot,
-      particles: particles,
-      phaseAParticles: [],
-      phaseAGlyphs: [],
-      centerX: centerX,
-      centerY: centerY,
-      breathPulse: breathPulse,
-      tapArea: tapArea,
-      playing: false
+      knowledgeShown: false,
+      finishScheduled: false
     };
 
-    this.spawnWrapPhaseAParticles();
-    this.addWrapTableCues(viewport);
-    this.showWrapEntryNote(viewport);
+    // 隐藏 hint，文案交给 panel-caption
+    if (this.app && this.app.dom && this.app.dom.hideHint) {
+      this.app.dom.hideHint();
+    }
 
-    // 单次点击触发全自动播放
-    tapArea.on("pointertap", function () {
-      if (scene.completed || scene.state.wrap.playing) return;
-      scene.autoPlayWrap(viewport);
-    });
+    // 创建并启动顺序播放
+    this.initPanels(WRAP_PANELS.slice());
+    this.startAutoPlay(AUTOPLAY_INTERVAL_MS);
 
-    this.cleanups.push(function () { breathPulse.kill(); });
+    // 包装 switchToPanel：每次切到第 4 面板（idx=3）即调度知识卡显示
+    var origSwitch = this.switchToPanel.bind(this);
+    this.switchToPanel = function (index, direction) {
+      origSwitch(index, direction);
+      if (index === 3) {
+        scene.scheduleWrapKnowledge();
+      }
+    };
+
+    // 极端情况下初始就在 panel 4，也触发一次
+    if (this.currentPanelIndex === 3) {
+      this.scheduleWrapKnowledge();
+    }
   };
 
-  NS.MVPScene.prototype.addWrapTableCues = function (viewport) {
-    var state = this.state.wrap;
-    var shadow = new PIXI.Graphics();
-    shadow.beginFill(0x16343a, 0.1);
-    shadow.drawEllipse(0, 0, viewport.width * 0.12, viewport.height * 0.035);
-    shadow.endFill();
-    shadow.position.set(state.centerX, state.centerY + viewport.height * 0.09);
-    state.group.addChildAt(shadow, 0);
-  };
-
-  NS.MVPScene.prototype.showWrapEntryNote = function (viewport) {
-    var state = this.state.wrap;
-    var note = new PIXI.Text(CONFIG.entryNote, {
-      fontFamily: "Songti SC, STSong, FangSong, serif",
-      fontSize: CONFIG.entryNoteFontSize,
-      fill: 0x16343a,
-      align: "center"
-    });
-    note.anchor.set(0.5);
-    note.alpha = CONFIG.entryNoteAlpha;
-    note.position.set(viewport.width * CONFIG.entryNoteX, viewport.height * CONFIG.entryNoteY);
-    state.entryNote = note;
-    this.content.addChild(note);
-  };
-
-  // 时间轴串联左叶、右叶合拢与自动束线
-  NS.MVPScene.prototype.autoPlayWrap = function (viewport) {
+  // 第 4 面板停留 3 秒后展示知识卡，再 3 秒后标记完成
+  NS.MVPScene.prototype.scheduleWrapKnowledge = function () {
     var scene = this;
-    var state = this.state.wrap;
-    state.playing = true;
-    state.tapArea.eventMode = "none";
-
-    this.setHint("");
-
-    var tl = global.gsap.timeline();
-
-    if (state.tableCue) {
-      tl.to(state.tableCue, { alpha: 0, duration: 0.25 }, 0);
-    }
-    if (state.entryNote) {
-      tl.to(state.entryNote, { alpha: 0, y: state.entryNote.y + 8, duration: 0.3 }, 0);
-    }
-
-    // Step 1: 左叶合拢
-    tl.to(state.left, {
-      x: state.centerX - 10,
-      rotation: CONFIG.rotationAngle,
-      duration: CONFIG.foldDuration,
-      ease: "power2.out"
-    }, 0);
-    tl.add(function () {
-      state.step = 1;
-      scene.gatherWrapPhaseAParticles(0.45);
-    }, CONFIG.foldDuration * 0.8);
-
-    // Step 2: 右叶合拢
-    var step2Start = CONFIG.foldDuration + 0.3;
-    tl.to(state.right, {
-      x: state.centerX + 10,
-      rotation: -CONFIG.rotationAngle,
-      duration: CONFIG.foldDuration,
-      ease: "power2.out"
-    }, step2Start);
-    tl.add(function () {
-      state.step = 2;
-      scene.gatherWrapPhaseAParticles(0.25);
-    }, step2Start + CONFIG.foldDuration * 0.8);
-
-    // Step 3: 束线动画
-    var step3Start = step2Start + CONFIG.foldDuration + 0.3;
-    tl.add(function () {
-      scene.autoPlayWrapThread(viewport, tl, step3Start);
-    }, step3Start);
-
-    this.cleanups.push(function () { tl.kill(); });
-  };
-
-  NS.MVPScene.prototype.autoPlayWrapThread = function (viewport, parentTl, startTime) {
-    var scene = this;
-    var state = this.state.wrap;
-    var glow = new PIXI.Graphics();
-    glow.beginFill(CONFIG.threadColor, 0.55);
-    glow.drawCircle(0, 0, 9);
-    glow.endFill();
-    glow.lineStyle(1.5, CONFIG.threadColor, 0.28);
-    glow.drawCircle(0, 0, 18);
-    glow.position.set(state.centerX + viewport.width * 0.13, state.centerY + viewport.height * 0.02);
-    glow.alpha = 0;
-    state.group.addChild(glow);
-
-    parentTl.to(glow, { alpha: 1, duration: 0.22 }, startTime);
-    parentTl.to(glow, {
-      x: state.centerX,
-      y: state.centerY,
-      alpha: 0,
-      duration: 0.9,
-      ease: "power2.inOut"
-    }, startTime + 0.25);
-
-    // 束线完成 → 触发完成态
-    parentTl.add(function () {
-      scene.completeWrapSequence(viewport);
-    }, startTime + 1.4);
-  };
-
-  NS.MVPScene.prototype.completeWrapSequence = function (viewport) {
-    var scene = this;
-    var state = this.state.wrap;
-    state.step = 3;
-    state.breathPulse.kill();
-    state.targetDot.alpha = 0;
-
-    // 粽形收束：两叶靠拢并降透明度
-    global.gsap.to(state.left, { x: state.centerX - 4, alpha: CONFIG.leafFinalAlpha, rotation: CONFIG.rotationAngle + 0.06, duration: CONFIG.wrapDuration, ease: "power2.inOut" });
-    global.gsap.to(state.right, { x: state.centerX + 4, alpha: CONFIG.leafFinalAlpha, rotation: -(CONFIG.rotationAngle + 0.06), duration: CONFIG.wrapDuration, ease: "power2.inOut" });
-
-    // 粽形 sprite 淡入
-    global.gsap.to(state.zongzi, {
-      alpha: 0.9,
-      duration: CONFIG.zongziFadeInDuration,
-      ease: "sine.out"
-    });
-    // 完成态旋转
-    global.gsap.to(state.zongzi, {
-      rotation: CONFIG.completionRotation,
-      duration: CONFIG.completionRotationDuration,
-      ease: "sine.inOut"
-    });
-
-    // 粒子聚合 + 过渡水纹
-    this.spawnWrapParticles(viewport);
-    this.spawnWrapTransitionRings(viewport);
-
-    // 完成态信息应紧跟粽形出现，避免用户等待时误解为流程结束。
-    global.gsap.delayedCall(CONFIG.wrapDuration + 0.25, function () {
-      scene.showWrapCulturalNote(viewport);
-      scene.showWrapKnowledgeDot(viewport);
-    });
-  };
-
-  NS.MVPScene.prototype.spawnWrapPhaseAParticles = function () {
-    var state = this.state.wrap;
-    var cx = state.centerX;
-    var cy = state.centerY;
-    var alphaRange = CONFIG.particlePhaseAAlpha;
-
-    for (var i = 0; i < CONFIG.particlePhaseACount; i++) {
-      var p = new PIXI.Graphics();
-      var color = CONFIG.particleColors[i % CONFIG.particleColors.length];
-      var size = 2 + Math.random() * 2.5;
-      p.beginFill(color, alphaRange[0] + Math.random() * (alphaRange[1] - alphaRange[0]));
-      p.drawCircle(0, 0, size);
-      p.endFill();
-      p.position.set(cx + (Math.random() - 0.5) * 160, cy + (Math.random() - 0.5) * 70);
-      state.particles.addChild(p);
-      state.phaseAParticles.push(p);
-      global.gsap.to(p, {
-        y: p.y + CONFIG.particlePhaseAFloatRange * (Math.random() > 0.5 ? 1 : -1),
-        duration: 1.2 + Math.random() * 0.7,
-        yoyo: true,
-        repeat: -1,
-        ease: "sine.inOut"
-      });
-    }
-
-    CONFIG.glyphPool.forEach(function (glyph, index) {
-      var text = new PIXI.Text(glyph, {
-        fontFamily: "Songti SC, STSong, FangSong, serif",
-        fontSize: CONFIG.glyphFontSize,
-        fill: CONFIG.glyphColor,
-        align: "center"
-      });
-      text.anchor.set(0.5);
-      text.alpha = 0.34 + Math.random() * 0.22;
-      text.position.set(cx + (Math.random() - 0.5) * 210, cy + (Math.random() - 0.5) * 92);
-      state.particles.addChild(text);
-      state.phaseAGlyphs.push(text);
-      global.gsap.to(text, {
-        y: text.y + CONFIG.particlePhaseAFloatRange * (Math.random() > 0.5 ? 1 : -1),
-        duration: 1.4 + Math.random() * 0.8,
-        yoyo: true,
-        repeat: -1,
-        ease: "sine.inOut"
-      });
-    });
-  };
-
-  NS.MVPScene.prototype.gatherWrapPhaseAParticles = function (spread) {
-    var state = this.state.wrap;
-    state.phaseAParticles.forEach(function (p, index) {
-      global.gsap.to(p, {
-        x: state.centerX + (Math.random() - 0.5) * 90 * spread,
-        y: state.centerY + (Math.random() - 0.5) * 54 * spread,
-        duration: CONFIG.foldDuration,
-        delay: index * 0.015,
-        ease: "power2.out"
-      });
-    });
-    state.phaseAGlyphs.forEach(function (p, index) {
-      global.gsap.to(p, {
-        x: state.centerX + (Math.random() - 0.5) * 100 * spread,
-        y: state.centerY + (Math.random() - 0.5) * 60 * spread,
-        alpha: Math.max(0.42, CONFIG.glyphAlpha - spread * 0.18),
-        duration: CONFIG.foldDuration,
-        delay: index * 0.02,
-        ease: "power2.out"
-      });
-    });
-  };
-
-  NS.MVPScene.prototype.spawnWrapParticles = function (viewport) {
-    var state = this.state.wrap;
-    var cx = state.centerX;
-    var cy = state.centerY;
-    var glyphs = this.pickWrapGlyphs();
-
-    state.phaseAParticles.forEach(function (p, index) {
-      global.gsap.to(p, {
-        x: cx + (Math.random() - 0.5) * 28,
-        y: cy + (Math.random() - 0.5) * 34,
-        alpha: 0,
-        duration: CONFIG.particleGatherDuration,
-        delay: index * 0.02,
-        ease: "power2.in"
-      });
-    });
-    state.phaseAGlyphs.forEach(function (p, index) {
-      global.gsap.to(p, {
-        x: cx + (Math.random() - 0.5) * 24,
-        y: cy + (Math.random() - 0.5) * 32,
-        alpha: 0,
-        duration: CONFIG.particleGatherDuration,
-        delay: index * 0.018,
-        ease: "power2.in"
-      });
-    });
-
-    for (var i = 0; i < CONFIG.particleCount; i++) {
-      var p = new PIXI.Graphics();
-      var color = CONFIG.particleColors[i % CONFIG.particleColors.length];
-      var size = 2 + Math.random() * 3;
-      p.beginFill(color, 0.6 + Math.random() * 0.3);
-      p.drawCircle(0, 0, size);
-      p.endFill();
-      var angle = Math.random() * Math.PI * 2;
-      var dist = 60 + Math.random() * 120;
-      p.position.set(cx + Math.cos(angle) * dist, cy + Math.sin(angle) * dist);
-      p.alpha = 0;
-      state.particles.addChild(p);
-
-      var delay = i * 0.02;
-      global.gsap.to(p, { alpha: 0.8, duration: 0.2, delay: delay });
-      global.gsap.to(p, {
-        x: cx + (Math.random() - 0.5) * 30,
-        y: cy + (Math.random() - 0.5) * 40,
-        duration: CONFIG.particleGatherDuration,
-        delay: delay + 0.15,
-        ease: "power2.in"
-      });
-      global.gsap.to(p, {
-        alpha: 0,
-        duration: 0.3,
-        delay: delay + CONFIG.particleGatherDuration
-      });
-    }
-
-    glyphs.forEach(function (glyph, index) {
-      var text = new PIXI.Text(glyph, {
-        fontFamily: "Songti SC, STSong, FangSong, serif",
-        fontSize: CONFIG.glyphFontSize,
-        fill: CONFIG.glyphColor,
-        align: "center"
-      });
-      var a = Math.random() * Math.PI * 2;
-      var d = 70 + Math.random() * 95;
-      text.anchor.set(0.5);
-      text.alpha = 0;
-      text.position.set(cx + Math.cos(a) * d, cy + Math.sin(a) * d);
-      state.particles.addChild(text);
-      global.gsap.to(text, { alpha: CONFIG.glyphAlpha, duration: 0.18, delay: index * 0.08 });
-      global.gsap.to(text, {
-        x: cx + (Math.random() - 0.5) * 22,
-        y: cy + (Math.random() - 0.5) * 28,
-        duration: CONFIG.particleGatherDuration,
-        delay: 0.12 + index * 0.08,
-        ease: "power2.in"
-      });
-      global.gsap.to(text, {
-        alpha: 0,
-        duration: 0.3,
-        delay: 0.12 + index * 0.08 + CONFIG.particleGatherDuration
-      });
-    });
-
-    this.showWrapPoemLine(viewport);
-  };
-
-  NS.MVPScene.prototype.pickWrapGlyphs = function () {
-    var pool = CONFIG.glyphPool.slice();
-    var chosen = [];
-    while (chosen.length < CONFIG.glyphCount && pool.length) {
-      var index = Math.floor(Math.random() * pool.length);
-      chosen.push(pool.splice(index, 1)[0]);
-    }
-    return chosen;
-  };
-
-  NS.MVPScene.prototype.showWrapPoemLine = function (viewport) {
-    var state = this.state.wrap;
-    if (state.poemLine) {
+    var st = this.state.wrap;
+    if (!st || st.knowledgeShown) {
       return;
     }
-    var poem = new PIXI.Text(CONFIG.poemLine, {
-      fontFamily: "Songti SC, STSong, FangSong, serif",
-      fontSize: CONFIG.poemFontSize,
-      fill: CONFIG.glyphColor,
-      align: "center",
-      lineHeight: Math.round(CONFIG.poemFontSize * 1.7)
-    });
-    poem.anchor.set(0.5);
-    poem.alpha = 0;
-    poem.position.set(viewport.width * CONFIG.poemFinalX, viewport.height * CONFIG.poemFinalY);
-    poem.scale.set(0.96);
-    state.poemLine = poem;
-    this.content.addChild(poem);
+    st.knowledgeShown = true;
 
-    global.gsap.to(poem, {
-      alpha: 0.82,
-      duration: 0.45,
-      delay: CONFIG.particleGatherDuration * 0.42,
-      ease: "sine.out"
-    });
-    global.gsap.to(poem.scale, {
-      x: 1,
-      y: 1,
-      duration: 0.65,
-      delay: CONFIG.particleGatherDuration * 0.42,
-      ease: "sine.inOut"
+    this.scheduleCall(KNOWLEDGE_DWELL_SEC, function () {
+      if (scene.app && scene.app.dom && scene.app.dom.showKnowledgeCard) {
+        scene.app.dom.showKnowledgeCard(KNOWLEDGE_TITLE, KNOWLEDGE_CONTENT);
+      }
+      scene.scheduleCall(COMPLETE_DELAY_SEC, function () {
+        if (scene.completed || scene.state.wrap.finishScheduled) {
+          return;
+        }
+        scene.state.wrap.finishScheduled = true;
+        scene.finish(true);
+        if (scene.app && scene.app.dom && scene.app.dom.hideHint) {
+          scene.app.dom.hideHint();
+        }
+      });
     });
   };
 
-  NS.MVPScene.prototype.showWrapKnowledgeDot = function (viewport) {
+  // 兼容 base-scene 中 FINISH_HANDLERS.wrap 的旧调用：新版无需 PIXI 知识点
+  NS.MVPScene.prototype.showWrapKnowledgeDot = function () {};
+
+  // ---------------- 每帧粒子驱动：通过 ticker 实例级绑定 ----------------
+  // 在 buildWrap 尾部挂载，避免原型级 monkey-patch 影响其他场景。
+  var origBuildWrap = NS.MVPScene.prototype.buildWrap;
+  NS.MVPScene.prototype.buildWrap = function (viewport) {
     var scene = this;
-    var state = this.state.wrap;
-    var dot = new PIXI.Graphics();
-    var x = state.centerX + viewport.width * 0.075;
-    var y = state.centerY + viewport.height * 0.085;
+    origBuildWrap.call(this, viewport);
 
-    dot.beginFill(CONFIG.knowledgeDotColor, 0.86);
-    dot.drawCircle(0, 0, CONFIG.knowledgeDotRadius);
-    dot.endFill();
-    dot.lineStyle(1.5, CONFIG.knowledgeDotColor, 0.42);
-    dot.drawCircle(0, 0, CONFIG.knowledgeDotRadius * 2.2);
-    dot.position.set(x, y);
-    dot.alpha = 0;
-    this.content.addChild(dot);
-
-    global.gsap.to(dot, { alpha: 1, duration: 0.18 });
-    global.gsap.to(dot.scale, {
-      x: 1.8,
-      y: 1.8,
-      duration: CONFIG.knowledgeDotDuration / (CONFIG.knowledgeDotPulseCount * 2),
-      yoyo: true,
-      repeat: CONFIG.knowledgeDotPulseCount * 2 - 1,
-      ease: "sine.inOut",
-      onComplete: function () {
-        global.gsap.to(dot, {
-          alpha: 0,
-          duration: 0.22,
-          onComplete: function () {
-            if (!dot.destroyed) {
-              dot.destroy();
-            }
-            scene.finish(true);
-          }
-        });
+    this.scheduleCall(0.08, function () {
+      if (scene.app && scene.app.dom && scene.app.dom.hideHint) {
+        scene.app.dom.hideHint();
       }
     });
+
+    var tickFn = function () { updateWrapDynamics(scene); };
+    scene.app.pixiApp.ticker.add(tickFn);
+    scene.cleanups.push(function () {
+      scene.app.pixiApp.ticker.remove(tickFn);
+      if (scene.state) scene.state.wrapDynamics = null;
+    });
   };
 
-  NS.MVPScene.prototype.showWrapCulturalNote = function (viewport) {
-    var state = this.state.wrap;
-    if (state.culturalNote) {
+  function updateWrapDynamics(scene) {
+    var dyn = scene.state && scene.state.wrapDynamics;
+    if (!dyn) {
       return;
     }
-    var note = new PIXI.Text(CONFIG.knowledgeNote, {
-      fontFamily: "Songti SC, STSong, FangSong, serif",
-      fontSize: CONFIG.knowledgeNoteFontSize,
-      fill: 0x16343a,
-      align: "center",
-      lineHeight: CONFIG.knowledgeNoteLineHeight,
-      wordWrap: true,
-      wordWrapWidth: Math.min(CONFIG.knowledgeNoteMaxWidth, viewport.width * 0.28)
-    });
-    note.anchor.set(0.5);
-    note.alpha = 0;
-    note.position.set(viewport.width * CONFIG.knowledgeNoteX, viewport.height * CONFIG.knowledgeNoteY);
-    state.culturalNote = note;
-    this.content.addChild(note);
-    global.gsap.to(note, { alpha: CONFIG.knowledgeNoteAlpha, duration: 0.45, ease: "sine.out" });
-  };
+    var deltaMS = scene.app.pixiApp.ticker.deltaMS || 16.67;
+    var stepSec = deltaMS / 1000;
+    if (stepSec > 0.1) { stepSec = 0.1; }
 
-  NS.MVPScene.prototype.spawnWrapTransitionRings = function (viewport) {
-    var state = this.state.wrap;
-    var x = viewport.width * 0.73;
-    var y = viewport.height * 0.63;
-
-    for (var i = 0; i < CONFIG.transitionRingCount; i++) {
-      var ring = new PIXI.Graphics();
-      ring.lineStyle(2, CONFIG.transitionRingColor, 0.22);
-      ring.drawCircle(0, 0, 18);
-      ring.position.set(x + i * 22, y + i * 10);
-      ring.alpha = 0.6;
-      state.group.addChild(ring);
-      global.gsap.to(ring.scale, {
-        x: CONFIG.transitionRingMaxRadius / 18,
-        y: CONFIG.transitionRingMaxRadius / 18,
-        duration: CONFIG.transitionRingDuration,
-        delay: i * 0.28,
-        ease: "sine.out"
-      });
-      global.gsap.to(ring, {
-        alpha: 0,
-        duration: CONFIG.transitionRingDuration,
-        delay: i * 0.28,
-        ease: "sine.out"
-      });
+    // 面板 2：青线弧线轻摆，模拟手指收线，不再绕场飞行。
+    var p2 = dyn.panel2;
+    if (p2 && p2.threadLines) {
+      p2.t += stepSec;
+      var t2 = p2.t;
+      for (var i = 0; i < p2.threadLines.length; i++) {
+        var th = p2.threadLines[i];
+        if (!th.sprite || th.sprite.destroyed) continue;
+        var pulse = Math.sin(t2 * 1.8 + th.phase);
+        th.sprite.alpha = th.baseAlpha + pulse * 0.08;
+        th.sprite.rotation = th.baseRotation + pulse * 0.018;
+        th.sprite.scale.x = 1 + pulse * 0.018;
+      }
+      if (p2.tuckShadow && !p2.tuckShadow.destroyed) {
+        p2.tuckShadow.alpha = 0.08 + Math.sin(t2 * 1.2) * 0.025;
+      }
     }
-  };
+
+    // 面板 3：蒸汽线缓慢上升和侧摆。
+    var p3 = dyn.panel3;
+    if (p3 && p3.steamLines) {
+      p3.t += stepSec;
+      var T = p3.t;
+      for (var s = 0; s < p3.steamLines.length; s++) {
+        var sp = p3.steamLines[s];
+        if (!sp.sprite || sp.sprite.destroyed) continue;
+        var wave = Math.sin(T * sp.speed + sp.phase);
+        sp.sprite.x = sp.baseX + wave * 11;
+        sp.sprite.y = sp.baseY - (Math.sin(T * 0.42 + sp.phase) + 1) * 8;
+        sp.sprite.alpha = 0.16 + (1 - Math.abs(wave)) * 0.16;
+        sp.sprite.scale.y = 0.95 + (Math.sin(T * 0.55 + sp.phase) + 1) * 0.12;
+      }
+    }
+  }
+
+  // ---------------- 暴露 NS.WrapScene 类（继承自 MVPScene） ----------------
+  // scene-manager 当前仍构造 MVPScene；该类作为后续重构的接入点保留，
+  // 同时让外部代码可以以 instanceof NS.WrapScene 判断本幕。
+  function WrapScene(app, manager, meta, index) {
+    NS.MVPScene.call(this, app, manager, meta, index);
+  }
+  WrapScene.prototype = Object.create(NS.MVPScene.prototype);
+  WrapScene.prototype.constructor = WrapScene;
+  NS.WrapScene = WrapScene;
+
 }(window));

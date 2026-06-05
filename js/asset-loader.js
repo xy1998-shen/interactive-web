@@ -10,10 +10,21 @@
     this.promises = {};
   }
 
-  AssetLoader.prototype.loadManifest = function (keys) {
+  AssetLoader.prototype.loadManifest = function (keys, onProgress) {
     var loader = this;
+    var total = keys.length;
+    var loaded = 0;
+    if (onProgress) {
+      onProgress(loaded, total);
+    }
     return Promise.all(keys.map(function (key) {
-      return loader.load(key);
+      return loader.load(key).then(function (texture) {
+        loaded += 1;
+        if (onProgress) {
+          onProgress(loaded, total);
+        }
+        return texture;
+      });
     }));
   };
 
@@ -59,10 +70,6 @@
     var ctx = canvas.getContext("2d");
     canvas.width = 960;
     canvas.height = 540;
-    if (key === "drumsticks") {
-      this.drawFallbackDrumsticks(ctx, canvas.width, canvas.height);
-      return canvas;
-    }
     this.drawFallbackBase(ctx, canvas.width, canvas.height, key);
     if (key === "mugwortVillage") {
       this.drawFallbackMugwortVillage(ctx, canvas.width, canvas.height);
@@ -76,10 +83,6 @@
       this.drawFallbackNearBoat(ctx, canvas.width, canvas.height);
     } else if (key === "leafLeft" || key === "leafRight") {
       this.drawFallbackLeaf(ctx, canvas.width, canvas.height, key === "leafRight");
-    } else if (key === "drumBoatBow") {
-      this.drawFallbackDrumBoatBow(ctx, canvas.width, canvas.height);
-    } else if (key === "drum") {
-      this.drawFallbackDrum(ctx, canvas.width, canvas.height);
     } else if (key === "boat") {
       this.drawFallbackBoat(ctx, canvas.width, canvas.height);
     } else if (key === "bell") {
@@ -129,10 +132,6 @@
       bg.addColorStop(0, "#d8ebe2");
       bg.addColorStop(0.58, "#edf5ef");
       bg.addColorStop(1, "#a9c5b2");
-    } else if (key === "drumRaceBg") {
-      bg.addColorStop(0, "#e8e1d2");
-      bg.addColorStop(0.45, "#d8ded1");
-      bg.addColorStop(1, "#9eaea3");
     } else if (key === "poemWater" || key === "bamboo" || key === "poemFigureBg" || key === "poemWaterPoet") {
       bg.addColorStop(0, "#dfeee9");
       bg.addColorStop(0.55, "#c8dfdb");

@@ -1,12 +1,16 @@
 /**
- * 第四幕「听鼓」场景搭建与交互逻辑
+ * 第四幕「听鼓」场景搭建与节奏调度
  *
- * 职责：场景初始化、鼓面/甲板/鼓槌绘制、击鼓交互判定、
- *       节奏检测、完成流程和轻知识展示。
- * 视觉效果由 drum-effects.js 提供。
+ * 设计：船尾第一人称视角 + 自动鼓声序列 + 多层视差。
+ * 不再使用面板切换，画面以缓慢行进、纵摇和鼓点惯性营造龙舟前进感；
+ * 鼓声自动播放，由慢到快，用户也可点击屏幕加入额外鼓击。
  *
- * 设计意图：用户通过节奏点击鼓面推动龙舟前行，
- * 不显示分数/计数/连击，仅以画面层次变化反映进度。
+ * 视差层（从后到前）：
+ *   Layer 0: 主背景（drumBgFirstperson，1.3× 视口宽，慢速横移）
+ *   Layer 1: 雾气/光晕程序图层
+ *   Layer 2: 中景水波（程序绘制水痕条纹，中速横移）
+ *   Layer 3: 鼓击波纹/水花粒子层
+ *   Layer 4: 字粒反馈
  *
  * 依赖：pixi.js、gsap、ChuJiang.CONFIG.drum、drum-effects.js
  */
@@ -15,148 +19,209 @@
 
   var NS = global.ChuJiang = global.ChuJiang || {};
   var CONFIG = NS.CONFIG.drum;
+  var utils = NS.utils;
+
+  // 自动鼓声序列设计参数
+  var SEQUENCE = {
+    totalBeats: CONFIG.totalBeats || 6,
+    startInterval: 820,    // BPM 73
+    endInterval: 560,      // BPM 107
+    leadInDelay: 1.1,      // 入场文字停留后再开始
+    finalSilence: 1.15     // 最后一击后等待时间
+  };
+
+  // 提示文案随击数推进
+  var HINT_BY_BEAT = [
+    { beat: 0,  text: "远鼓自江上" },
+    { beat: 2,  text: "舟随鼓行" },
+    { beat: 4,  text: "众桨同频" },
+    { beat: 6,  text: "鼓声已渡" }
+  ];
+
+  var DRUM_KNOWLEDGE_TITLE = "听鼓竞渡 · 舟鼓同频";
+  var DRUM_KNOWLEDGE_CONTENT = [
+    "<p><strong>为何龙舟以鼓为令？</strong></p>",
+    "<p>竞渡时鼓点统一节奏，鼓手居前发令，桨手随声入水，整舟才能同频向前。</p>",
+    "<br>",
+    "<p><strong>端午竞渡的含义</strong></p>",
+    "<p>龙舟竞渡承接江上追思，也把乡人合力、祈愿安康的节令情感，化成可听见的鼓声与水痕。</p>"
+  ].join("");
 
   // ═══════════════════════════════════════════════
-  // 场景搭建
+  // 入口：构建视差舞台
   // ═══════════════════════════════════════════════
 
-  /**
-   * 第四幕入口：创建所有图层、交互对象和初始状态。
-   * 由 base-scene.js 的 buildScene 分发调用。
-   */
   NS.MVPScene.prototype.buildDrum = function (viewport) {
     var scene = this;
 
-    // --- 创建图层（从后到前）---
-    var ringLayer = new PIXI.Container();       // 鼓波扩散
-    var trailLayer = new PIXI.Container();      // 水痕
-    var boatDeckLayer = new PIXI.Container();   // 甲板/船首
-    var oarLayer = new PIXI.Container();        // 桨影 + 红绸
-    var drumstickLayer = new PIXI.Container();  // 鼓槌
-    var wordLayer = new PIXI.Container();       // 文字层
+    // --- 纯色底色（防止PNG透明区域露出棋盘格）---
+    var solidBg = new PIXI.Graphics();
+    solidBg.beginFill(0x1a3a3a); // 深青绿色，江面底色
+    solidBg.drawRect(-200, -200, viewport.width + 400, viewport.height + 400);
+    solidBg.endFill();
+    // 再叠一层上深下浅的渐变感
+    var gradTop = new PIXI.Graphics();
+    gradTop.beginFill(0x2a4a52, 0.6);
+    gradTop.drawRect(-200, 0, viewport.width + 400, viewport.height * 0.4);
+    gradTop.endFill();
+    var gradBot = new PIXI.Graphics();
+    gradBot.beginFill(0x0d1a18, 0.5);
+    gradBot.drawRect(-200, viewport.height * 0.65, viewport.width + 400, viewport.height * 0.35);
+    gradBot.endFill();
+    this.container.addChildAt(solidBg, 0);
+    this.container.addChildAt(gradTop, 1);
+    this.container.addChildAt(gradBot, 2);
 
+    // --- 替换基类背景为第一人称素材 ---
+    var firstPersonTex = this.app.assets.get("drumBgFirstperson");
+    if (firstPersonTex) {
+      this.background.texture = firstPersonTex;
+      this.fitDrumBackground(viewport);
+    }
+
+    // --- 弱化基类 overlay（不要把第一人称背景压成灰白）---
+    if (this.overlay) {
+      this.overlay.clear();
+      this.overlay.beginFill(0x0d1a18, 0.12);
+      this.overlay.drawRect(0, viewport.height * 0.78, viewport.width, viewport.height * 0.22);
+      this.overlay.endFill();
+    }
+
+    // --- 创建图层（从后到前） ---
+    var mistLayer    = new PIXI.Container(); // 远雾光晕
+    var midLayer     = new PIXI.Container(); // 中景水波条纹
+    var ringLayer    = new PIXI.Container(); // 鼓波扩散
+    var splashLayer  = new PIXI.Container(); // 水花粒子
+    var wordLayer    = new PIXI.Container(); // 文字字粒
+    this.content.addChild(mistLayer);
+    this.content.addChild(midLayer);
     this.content.addChild(ringLayer);
-    this.content.addChild(trailLayer);
-    this.content.addChild(boatDeckLayer);
-    this.content.addChild(oarLayer);
-
-    // --- 创建鼓面和命中区 ---
-    var drum = this.createDrumForeground(viewport);
-    var hitTarget = this.createDrumHitTarget(viewport);
-
-    this.content.addChild(drumstickLayer);
+    this.content.addChild(splashLayer);
     this.content.addChild(wordLayer);
 
-    // --- 初始化场景状态 ---
+    // 雾气光晕（中段层叠的米白渐隐条带，做出空气透视）
+    mistLayer.addChild(NS.DrumEffects.createMistOverlay(viewport));
+
+    // 中景水波（程序绘制的水痕条纹，独立横移）
+    var midRipples = NS.DrumEffects.createMidRipples(viewport, this.app.pixiApp.renderer);
+    midLayer.addChild(midRipples.container);
+
+    // --- 状态记录 ---
     this.state.drum = {
-      beats: 0,                        // 当前击鼓次数
-      intervals: [],                   // 最近几次击鼓间隔（毫秒）
-      lastBeatTime: 0,                 // 上一击时间戳
-      completing: false,               // 完成动画播放中，锁定输入
-      drum: drum,                      // 鼓面精灵
-      hitTarget: hitTarget,            // 隐形命中区
-      drumstickLayer: drumstickLayer,
-      drumsticks: [],                  // 程序绘制鼓槌引用
-      drumstickSprite: null,           // 精灵图鼓槌引用
-      boatDeckLayer: boatDeckLayer,
+      // 节奏
+      beats: 0,
+      totalBeats: SEQUENCE.totalBeats,
+      completing: false,
+      timers: [],
+      // 视差驱动
+      time: 0,
+      bgBaseX: 0,
+      bgBaseY: 0,
+      bgBaseScaleX: 1,
+      bgBaseScaleY: 1,
+      bgCenterX: viewport.width * 0.5,
+      bgCenterY: viewport.height * 0.5,
+      scrollAccum: 0,
+      motionPhase: Math.random() * Math.PI * 2,
+      surgeZoom: 0,
+      bobImpulse: 0,
+      sideImpulse: 0,
+      // 中景水波
+      midRipples: midRipples,
+      // 图层
+      mistLayer: mistLayer,
+      midLayer: midLayer,
       ringLayer: ringLayer,
-      trailLayer: trailLayer,
-      oarLayer: oarLayer,
+      splashLayer: splashLayer,
       wordLayer: wordLayer,
-      knowledgeDot: null,
+      // 音频
       audioContext: null,
-      // 记录初始变换值，动画始终基于这些值计算，防止漂移
-      bgBaseScaleX: this.background.scale.x,
-      bgBaseScaleY: this.background.scale.y,
-      bgBaseY: this.background.y,
-      drumBaseY: drum.y,
-      drumBaseScaleX: drum.scale.x,
-      drumBaseScaleY: drum.scale.y
+      // 完成态
+      knowledgeDot: null
     };
+    this.captureDrumBackgroundBase(viewport);
 
-    // --- 补充视觉元素 ---
-    if (drum._usesGeneratedDeck) {
-      this.drawFirstPersonBoat(viewport);
-    }
-    this.drawDrumsticks(viewport);
+    // --- 入场文字 + 自动鼓序列 ---
     this.createDrumEntryText(viewport);
+    this.scheduleDrumSequence(viewport);
 
-    // --- 绑定交互 ---
-    hitTarget.on("pointertap", function () {
-      if (scene.completed) return;
-      scene.hitDrum(viewport);
+    // --- 用户轻触：只给水面回声，不额外增加鼓声次数 ---
+    this.background.eventMode = "static";
+    this.background.cursor = "pointer";
+    this.background.on("pointertap", function () {
+      var state = scene.state.drum;
+      if (!state || state.completing || scene.completed) return;
+      var point = scene.getDrumBeatWaterPoint(viewport, state.beats + 1, 0.006);
+      NS.DrumEffects.createWaterBeatBurst(
+        state.ringLayer,
+        point.x,
+        point.y + viewport.height * 0.028,
+        CONFIG.ringMaxRadius * 0.55,
+        0.42,
+        CONFIG
+      );
+    });
+
+    // --- 每帧更新视差 ---
+    var tickFn = function () { scene.updateDrumParallax(); };
+    this.app.pixiApp.ticker.add(tickFn);
+    this.cleanups.push(function () {
+      scene.app.pixiApp.ticker.remove(tickFn);
     });
   };
 
-  // ═══════════════════════════════════════════════
-  // 鼓面与命中区创建
-  // ═══════════════════════════════════════════════
-
-  /**
-   * 创建鼓面前景精灵。
-   * 优先使用船首素材（drumBoatBow），缺失时降级为独立鼓面。
-   * _usesGeneratedDeck 标记决定是否需要程序绘制甲板。
-   */
-  NS.MVPScene.prototype.createDrumForeground = function (viewport) {
-    var sprite;
-    if (this.app.assets.get("drumBoatBow")) {
-      sprite = this.createSprite(
-        "drumBoatBow",
-        CONFIG.bowSpriteWidthRatio,
-        CONFIG.bowSpriteX,
-        CONFIG.bowSpriteY,
-        viewport
-      );
-      sprite.alpha = 0.96;
-      sprite._usesGeneratedDeck = false;
-      return sprite;
-    }
-    // 降级：使用独立鼓面素材 + 程序绘制甲板
-    sprite = this.createSprite("drum", CONFIG.drumWidthRatio, CONFIG.drumX, CONFIG.drumY, viewport);
-    sprite._usesGeneratedDeck = true;
-    return sprite;
+  NS.MVPScene.prototype.fitDrumBackground = function (viewport) {
+    var texture = this.background && this.background.texture;
+    if (!texture) return;
+    utils.fitCover(this.background, texture, viewport.width, viewport.height);
+    // 16:9 素材在 16:9 视口几乎没有垂直余量；额外过扫给纵摇和鼓点惯性留出边界。
+    this.background.scale.x *= 1.08;
+    this.background.scale.y *= 1.08;
+    this.background.x = (viewport.width - this.background.width) * 0.5;
+    this.background.y = (viewport.height - this.background.height) * 0.5;
   };
 
-  /**
-   * 创建透明圆形命中区，半径大于视觉鼓面以保证易用性。
-   * 参见设计文档：命中范围应大于视觉鼓面。
-   */
-  NS.MVPScene.prototype.createDrumHitTarget = function (viewport) {
-    var hitTarget = new PIXI.Graphics();
-    hitTarget.beginFill(0xffffff, 0.001);
-    hitTarget.drawCircle(0, 0, viewport.width * CONFIG.hitRadiusRatio);
-    hitTarget.endFill();
-    hitTarget.position.set(viewport.width * CONFIG.drumX, viewport.height * CONFIG.drumY);
-    hitTarget.eventMode = "static";
-    hitTarget.cursor = "pointer";
-    this.content.addChild(hitTarget);
-    return hitTarget;
+  NS.MVPScene.prototype.captureDrumBackgroundBase = function (viewport) {
+    var state = this.state && this.state.drum;
+    if (!state || !this.background) return;
+    state.bgBaseX = this.background.x;
+    state.bgBaseY = this.background.y;
+    state.bgBaseScaleX = this.background.scale.x;
+    state.bgBaseScaleY = this.background.scale.y;
+    state.bgCenterX = viewport.width * 0.5;
+    state.bgCenterY = viewport.height * 0.5;
+  };
+
+  NS.MVPScene.prototype.updateDrumLayout = function (viewport) {
+    this.fitDrumBackground(viewport);
+    this.captureDrumBackgroundBase(viewport);
   };
 
   // ═══════════════════════════════════════════════
   // 入场文案
   // ═══════════════════════════════════════════════
 
-  /** 入场短句"远鼓入江，舟影渐明"淡入后自动消失。 */
   NS.MVPScene.prototype.createDrumEntryText = function (viewport) {
-    var label = this.createText(
-      "远鼓入江，舟影渐明",
-      CONFIG.entryTextFontSize,
-      0xe8e1d2,
-      0
-    );
+    var label = this.createText("远鼓入江，舟影渐明", CONFIG.entryTextFontSize, 0xf4ecd8, 0);
     label.anchor.set(0.5);
     label.position.set(viewport.width * 0.5, viewport.height * CONFIG.entryTextY);
+    label.style.stroke = 0x16343a;
+    label.style.strokeThickness = 3;
+    label.style.dropShadow = true;
+    label.style.dropShadowColor = "#0d1a18";
+    label.style.dropShadowBlur = 8;
+    label.style.dropShadowAlpha = 0.55;
+    label.style.dropShadowDistance = 0;
     this.content.addChild(label);
 
     global.gsap.to(label, {
-      alpha: 0.82,
-      y: label.y - 8,
-      duration: CONFIG.entryTextDuration,
+      alpha: 0.92,
+      y: label.y - 6,
+      duration: 0.7,
       ease: "power2.out",
       yoyo: true,
       repeat: 1,
-      repeatDelay: 0.4,
+      repeatDelay: 1.4,
       onComplete: function () {
         if (!label.destroyed) label.destroy();
       }
@@ -164,350 +229,367 @@
   };
 
   // ═══════════════════════════════════════════════
-  // 文本工厂
+  // 自动鼓序列：BPM 70 → 130，缓加速
   // ═══════════════════════════════════════════════
 
-  /**
-   * 创建带描边和阴影的场景内文字，用于鼓波字粒和完成态字粒。
-   * 与 base-scene 的 createText 区别：增加描边确保在复杂背景上可读。
-   */
-  NS.MVPScene.prototype.makeDrumText = function (text, fontSize) {
-    var label = this.createText(text, fontSize, CONFIG.textColor, 0);
-    label.style.stroke = CONFIG.textStrokeColor;
-    label.style.strokeThickness = Math.max(3, Math.round(fontSize * 0.18));
-    label.style.dropShadow = true;
-    label.style.dropShadowColor = "#f1e8d2";
-    label.style.dropShadowBlur = 8;
-    label.style.dropShadowAlpha = 0.5;
-    label.style.dropShadowDistance = 0;
-    return label;
-  };
+  NS.MVPScene.prototype.scheduleDrumSequence = function (viewport) {
+    var scene = this;
+    var state = this.state.drum;
+    var n = SEQUENCE.totalBeats;
+    var delaySec = SEQUENCE.leadInDelay;
 
-  // ═══════════════════════════════════════════════
-  // 鼓槌绘制
-  // ═══════════════════════════════════════════════
+    for (var i = 0; i < n; i++) {
+      var ratio = n === 1 ? 0 : i / (n - 1);
+      // 二次缓动 → 早期慢、后期更急
+      var eased = ratio * ratio;
+      var interval = SEQUENCE.startInterval - (SEQUENCE.startInterval - SEQUENCE.endInterval) * eased;
+      var isFinal = (i === n - 1);
 
-  /** 鼓槌渲染入口：有素材用素材，否则程序绘制。 */
-  NS.MVPScene.prototype.drawDrumsticks = function (viewport) {
-    if (this.app.assets.get("drumsticks")) {
-      this.drawDrumstickSprite(viewport);
-      return;
+      (function (atDelay, finalBeat, beatIndex) {
+        var call = global.gsap.delayedCall(atDelay, function () {
+          if (scene.completed) return;
+          scene.triggerDrumPulse(viewport, finalBeat, false);
+          scene.updateBeatHint(beatIndex);
+        });
+        state.timers.push(call);
+        scene.cleanups.push(function () { call.kill(); });
+      })(delaySec, isFinal, i + 1);
+
+      // 鼓击之间随机划水声（增强沉浸）
+      if (!isFinal && i > 0 && Math.random() < 0.55) {
+        (function (atDelay) {
+          var swish = global.gsap.delayedCall(atDelay, function () {
+            if (scene.completed) return;
+            NS.DrumEffects.playPaddleNoise(scene);
+          });
+          state.timers.push(swish);
+          scene.cleanups.push(function () { swish.kill(); });
+        })(delaySec + (interval / 1000) * 0.55);
+      }
+
+      delaySec += interval / 1000;
     }
-    this.drawFallbackDrumsticks(viewport);
-  };
 
-  /** 使用 drumsticks 精灵图绘制鼓槌。 */
-  NS.MVPScene.prototype.drawDrumstickSprite = function (viewport) {
-    var state = this.state.drum;
-    var sprite = this.createSprite(
-      "drumsticks",
-      CONFIG.drumsticksWidthRatio,
-      CONFIG.drumsticksX,
-      CONFIG.drumsticksY,
-      viewport
-    );
-    sprite.alpha = 0.9;
-    // 保存基准位置，动画始终从这里出发
-    sprite._baseX = sprite.x;
-    sprite._baseY = sprite.y;
-    sprite._baseRotation = sprite.rotation;
-    sprite._baseScaleX = sprite.scale.x;
-    sprite._baseScaleY = sprite.scale.y;
-    state.drumstickLayer.addChild(sprite);
-    state.drumstickSprite = sprite;
-  };
-
-  /** 降级模式：程序绘制两根对称鼓槌。 */
-  NS.MVPScene.prototype.drawFallbackDrumsticks = function (viewport) {
-    var state = this.state.drum;
-    var centerX = viewport.width * CONFIG.drumX;
-    var centerY = viewport.height * CONFIG.drumY;
-    var specs = [
-      { x: centerX - viewport.width * 0.085, y: centerY - viewport.height * 0.055, rotation: -0.72, side: -1 },
-      { x: centerX + viewport.width * 0.085, y: centerY - viewport.height * 0.055, rotation: 0.72, side: 1 }
-    ];
-
-    specs.forEach(function (spec) {
-      var stick = new PIXI.Container();
-      var shaft = new PIXI.Graphics();
-      var tip = new PIXI.Graphics();
-
-      // 杆身
-      shaft.lineStyle(8, CONFIG.drumstickColor, CONFIG.drumstickAlpha);
-      shaft.moveTo(0, 0);
-      shaft.lineTo(0, -viewport.height * 0.18);
-      // 槌头
-      tip.beginFill(CONFIG.drumstickTipColor, 0.86);
-      tip.drawCircle(0, -viewport.height * 0.19, 10);
-      tip.endFill();
-
-      stick.addChild(shaft);
-      stick.addChild(tip);
-      stick.position.set(spec.x, spec.y);
-      stick.rotation = spec.rotation;
-      stick.alpha = 0.88;
-      stick._baseX = spec.x;
-      stick._baseY = spec.y;
-      stick._baseRotation = spec.rotation;
-      stick._side = spec.side;
-
-      state.drumstickLayer.addChild(stick);
-      state.drumsticks.push(stick);
+    // 最后一击之后延迟，进入完成态
+    var endCall = global.gsap.delayedCall(delaySec + SEQUENCE.finalSilence, function () {
+      if (scene.completed) return;
+      scene.completeDrum(viewport);
     });
+    state.timers.push(endCall);
+    this.cleanups.push(function () { endCall.kill(); });
   };
 
-  // ═══════════════════════════════════════════════
-  // 程序绘制甲板（降级模式）
-  // ═══════════════════════════════════════════════
-
-  /**
-   * 当缺少船首素材时，程序绘制第一视角龙舟甲板。
-   * 使用深墨绿 + 青铜金线表现船体纹理。
-   */
-  NS.MVPScene.prototype.drawFirstPersonBoat = function (viewport) {
-    var state = this.state.drum;
-    var deck = state.boatDeckLayer;
-    var centerX = viewport.width * 0.5;
-    var bottomY = viewport.height * 1.03;
-    var bowY = viewport.height * 0.6;
-    var leftX = viewport.width * 0.29;
-    var rightX = viewport.width * 0.71;
-    var bowTipX = centerX;
-    var bowTipY = viewport.height * 0.42;
-
-    var hull = new PIXI.Graphics();
-
-    // 船体轮廓
-    hull.beginFill(CONFIG.bowColor, CONFIG.bowAlpha);
-    hull.lineStyle(1.5, CONFIG.bowLineColor, 0.22);
-    hull.moveTo(leftX, bottomY);
-    hull.lineTo(centerX - viewport.width * 0.07, bowY);
-    hull.lineTo(bowTipX, bowTipY);
-    hull.lineTo(centerX + viewport.width * 0.07, bowY);
-    hull.lineTo(rightX, bottomY);
-    hull.closePath();
-    hull.endFill();
-
-    // 龙骨线
-    hull.lineStyle(2, CONFIG.bowLineColor, 0.24);
-    hull.moveTo(centerX - viewport.width * 0.08, bottomY);
-    hull.lineTo(bowTipX, bowTipY);
-    hull.moveTo(centerX + viewport.width * 0.08, bottomY);
-    hull.lineTo(bowTipX, bowTipY);
-
-    // 横向肋条
-    hull.lineStyle(1, 0xe8e1d2, 0.16);
-    hull.moveTo(centerX - viewport.width * 0.18, viewport.height * 0.84);
-    hull.lineTo(centerX + viewport.width * 0.18, viewport.height * 0.84);
-    hull.moveTo(centerX - viewport.width * 0.12, viewport.height * 0.72);
-    hull.lineTo(centerX + viewport.width * 0.12, viewport.height * 0.72);
-
-    deck.addChild(hull);
-  };
-
-  // ═══════════════════════════════════════════════
-  // 核心交互：击鼓
-  // ═══════════════════════════════════════════════
-
-  /**
-   * 每次点击鼓面时执行的主逻辑。
-   * 职责：记录时间、判定节奏、触发视觉/音频反馈、推进进度。
-   */
-  NS.MVPScene.prototype.hitDrum = function (viewport) {
-    var state = this.state.drum;
-    if (state.completing) {
-      return;
-    }
-
-    // --- 记录击鼓间隔 ---
-    var now = performance.now();
-    var interval = state.lastBeatTime > 0 ? now - state.lastBeatTime : 0;
-    if (interval > 0) {
-      state.intervals.push(interval);
-      // 只保留最近 N-1 个间隔用于节奏判定
-      if (state.intervals.length > CONFIG.stableBeatCount - 1) {
-        state.intervals.shift();
+  NS.MVPScene.prototype.updateBeatHint = function (beat) {
+    var hint = null;
+    for (var i = HINT_BY_BEAT.length - 1; i >= 0; i--) {
+      if (beat >= HINT_BY_BEAT[i].beat) {
+        hint = HINT_BY_BEAT[i].text;
+        break;
       }
     }
-    state.lastBeatTime = now;
-    state.beats++;
+    if (hint) this.setHint(hint);
+  };
 
-    // --- 节奏与进度计算 ---
-    var stableRhythm = this.isDrumRhythmStable(state);
-    var progress = Math.min(1, state.beats / CONFIG.totalBeats);
-    var ringRadius = CONFIG.ringMaxRadius * (stableRhythm ? CONFIG.stableRingScale : 1);
-    var ringY = viewport.height * CONFIG.drumY + CONFIG.ringSpawnOffsetY;
-
-    // --- 触发反馈（音频 + 视觉）---
-    this.playDrumSound(false);
-    this.spawnDrumRing(
-      viewport.width * CONFIG.drumX, ringY,
-      ringRadius, stableRhythm ? 1.16 : 1,
-      state.ringLayer
-    );
-    this.spawnBeatWord(viewport, stableRhythm);
-    this.spawnDrumInfoNote(viewport, state.beats);
-    this.animateDrumPress();
-    this.animateDrumsticks();
-
-    // --- 前进与水痕 ---
-    this.animateForwardMotion(progress);
-    this.animateBoatDeckPush();
-    this.spawnWaterTrail(viewport, progress, stableRhythm);
-
-    // --- 稳定节奏额外反馈 ---
-    if (stableRhythm) {
-      this.spawnOarStrokes(viewport, progress);
-      this.spawnRedSilk(viewport);
-    }
-
-    // --- 提示文案（不显示数字）---
-    if (progress < 1) {
-      this.setHint("鼓声渐近");
-    }
-
-    // --- 完成判定 ---
-    if (state.beats >= CONFIG.totalBeats) {
-      this.completeDrum(viewport);
-    }
+  NS.MVPScene.prototype.getDrumBeatWaterPoint = function (viewport, beat, jitterRatio) {
+    var leftWater = [
+      { x: 0.17, y: 0.56 },
+      { x: 0.23, y: 0.61 },
+      { x: 0.28, y: 0.66 }
+    ];
+    var rightWater = [
+      { x: 0.72, y: 0.57 },
+      { x: 0.80, y: 0.62 },
+      { x: 0.88, y: 0.67 }
+    ];
+    var lane = beat % 2 === 0 ? rightWater : leftWater;
+    var slot = lane[Math.floor((beat - 1) / 2) % lane.length];
+    var jitter = jitterRatio == null ? 0.018 : jitterRatio;
+    return {
+      x: viewport.width * (slot.x + (Math.random() - 0.5) * jitter),
+      y: viewport.height * (slot.y + (Math.random() - 0.5) * jitter)
+    };
   };
 
   // ═══════════════════════════════════════════════
-  // 节奏判定
+  // 单击鼓击：音频 + 视觉反馈 + 视差冲刺
   // ═══════════════════════════════════════════════
 
   /**
-   * 判断最近连击是否形成稳定节奏。
-   * 条件：最近 (stableBeatCount - 1) 个间隔均在 [min, max] 毫秒区间内。
+   * @param {object} viewport
+   * @param {boolean} isFinal - 是否为序列最终一击
+   * @param {boolean} isUserExtra - 用户加击：略弱、音色稍亮
    */
-  NS.MVPScene.prototype.isDrumRhythmStable = function (state) {
-    if (state.intervals.length < CONFIG.stableBeatCount - 1) {
-      return false;
-    }
-    return state.intervals.every(function (interval) {
-      return interval >= CONFIG.stableMinIntervalMS && interval <= CONFIG.stableMaxIntervalMS;
+  NS.MVPScene.prototype.triggerDrumPulse = function (viewport, isFinal, isUserExtra) {
+    var state = this.state.drum;
+    if (!state) return;
+
+    if (!isUserExtra) state.beats++;
+
+    // 音频
+    NS.DrumEffects.playDrumHit(this, isFinal, isUserExtra);
+
+    // 鼓点水花跟随字粒落在左右江面，不落在船身中线。
+    var wordPoint = this.getDrumBeatWaterPoint(viewport, state.beats || 1, 0.012);
+    state.activeBeatWaterPoint = {
+      beat: state.beats,
+      x: wordPoint.x,
+      y: wordPoint.y
+    };
+    var burstX = wordPoint.x;
+    var burstY = wordPoint.y + viewport.height * 0.03;
+    var burstRadius = isFinal
+      ? CONFIG.ringMaxRadius * 1.85
+      : (isUserExtra ? CONFIG.ringMaxRadius * 0.85 : CONFIG.ringMaxRadius * 1.1);
+    var intensity = isFinal ? 1.6 : (isUserExtra ? 0.9 : 1.1);
+    NS.DrumEffects.createWaterBeatBurst(state.ringLayer, burstX, burstY, burstRadius, intensity, CONFIG);
+
+    // 画面前冲：用轻微缩放和纵向惯性替代整张图硬平移，避免机械抖动。
+    var zoomKick = isFinal ? 0.018 : (isUserExtra ? 0.004 : 0.008);
+    var bobKick = isFinal ? 10 : (isUserExtra ? 2.5 : 4.5);
+    var sideKick = (Math.random() - 0.5) * (isFinal ? 5 : 2.2);
+    state.surgeZoom = Math.min(0.026, state.surgeZoom + zoomKick);
+    state.bobImpulse += bobKick;
+    state.sideImpulse += sideKick;
+    global.gsap.killTweensOf(state, "surgeZoom,bobImpulse,sideImpulse");
+    global.gsap.to(state, {
+      surgeZoom: 0,
+      bobImpulse: 0,
+      sideImpulse: 0,
+      duration: isFinal ? 1.15 : 0.82,
+      ease: "sine.out"
     });
+
+    // 两侧水花粒子
+    var splashCount = isFinal ? 16 : (isUserExtra ? 4 : 7);
+    for (var i = 0; i < splashCount; i++) {
+      NS.DrumEffects.createWaterSplash(
+        state.splashLayer, viewport, i % 2 === 0 ? "left" : "right"
+      );
+    }
+
+    // 字粒（仅自动序列触发，避免点击刷屏）
+    if (!isUserExtra && CONFIG.beatWords && CONFIG.beatWords.length) {
+      this.spawnDrumBeatWord(viewport, state.beats, isFinal);
+    }
+
+    // 终击额外白浪 + 提示
+    if (isFinal) {
+      NS.DrumEffects.createWaterBeatBurst(
+        state.ringLayer, burstX, burstY,
+        CONFIG.ringMaxRadius * 2.4, 1.2, CONFIG
+      );
+      this.setHint("鼓声已渡");
+    }
+  };
+
+  NS.MVPScene.prototype.spawnDrumBeatWord = function (viewport, beat, isFinal) {
+    var state = this.state.drum;
+    var word = CONFIG.beatWords[(beat - 1) % CONFIG.beatWords.length];
+    var fontSize = isFinal
+      ? CONFIG.beatWordStableFontSize + 8
+      : CONFIG.beatWordStableFontSize + 3;
+    var label = this.createText(word, fontSize, 0xf4ecd8, 0);
+    label.anchor.set(0.5);
+    label.style.stroke = 0x16343a;
+    label.style.strokeThickness = 3;
+    label.style.dropShadow = true;
+    label.style.dropShadowColor = "#f1e8d2";
+    label.style.dropShadowBlur = 10;
+    label.style.dropShadowAlpha = 0.36;
+    label.style.dropShadowDistance = 0;
+
+    var point = state.activeBeatWaterPoint && state.activeBeatWaterPoint.beat === beat
+      ? state.activeBeatWaterPoint
+      : this.getDrumBeatWaterPoint(viewport, beat, 0.018);
+    var x = point.x;
+    var y = point.y;
+    this.spawnWaterGlyphRipple(state.wordLayer, x, y + fontSize * 0.42, isFinal ? 1.18 : 0.95, 0.16);
+    label.position.set(x, y);
+    label.rotation = (Math.random() - 0.5) * 0.08;
+    state.wordLayer.addChild(label);
+
+    global.gsap.to(label, { alpha: isFinal ? 0.9 : 0.78, duration: 0.22, ease: "sine.out" });
+    global.gsap.to(label, {
+      alpha: 0,
+      y: y - 28,
+      x: x + (beat % 2 === 0 ? -18 : 18) + (Math.random() - 0.5) * 8,
+      duration: 1.42,
+      delay: 0.2,
+      ease: "sine.inOut",
+      onComplete: function () {
+        if (!label.destroyed) label.destroy();
+      }
+    });
+  };
+
+  // ═══════════════════════════════════════════════
+  // 视差更新（每帧）
+  // ═══════════════════════════════════════════════
+
+  NS.MVPScene.prototype.updateDrumParallax = function () {
+    var state = this.state && this.state.drum;
+    if (!state || !this.background) return;
+
+    var deltaMS = this.app.pixiApp.ticker.deltaMS || 16.67;
+    if (deltaMS > 100) deltaMS = 16.67;
+    state.time += deltaMS / 1000;
+
+    // 加速度：随击数增加滚动速度（按实际帧时归一化到 60fps 基准）
+    var beatBoost = Math.min(1.6, state.beats * 0.12);
+    var scrollSpeed = (0.6 + beatBoost) * (deltaMS / 16.67);
+
+    state.scrollAccum += scrollSpeed;
+    var phase = state.motionPhase || 0;
+    var naturalX = Math.sin(state.time * 0.37 + phase) * 1.8
+      + Math.sin(state.time * 0.83 + phase * 0.7) * 0.9;
+    var naturalY = Math.sin(state.time * 1.05 + phase * 0.4) * 1.5
+      + Math.sin(state.time * 0.48 + phase) * 0.8;
+    var forwardTravel = Math.min(this.viewportWidth * 0.02, state.scrollAccum * 0.024);
+    var breathingZoom = Math.sin(state.time * 0.42 + phase) * 0.0012;
+    var scaleBoost = state.surgeZoom + breathingZoom;
+    var bgScaleX = state.bgBaseScaleX * (1 + scaleBoost);
+    var bgScaleY = state.bgBaseScaleY * (1 + scaleBoost * 0.74);
+    var texW = this.background.texture.width || (this.background.width / this.background.scale.x);
+    var texH = this.background.texture.height || (this.background.height / this.background.scale.y);
+
+    this.background.scale.set(bgScaleX, bgScaleY);
+    this.background.x = state.bgCenterX - texW * bgScaleX * 0.5
+      + naturalX + state.sideImpulse - forwardTravel;
+    this.background.y = state.bgCenterY - texH * bgScaleY * 0.5
+      + naturalY + state.bobImpulse + forwardTravel * 0.18;
+
+    // Layer 2（中景水波）：水痕比船身更快，鼓点只给轻微惯性偏移。
+    if (state.midRipples && state.midRipples.tile) {
+      state.midRipples.tile.tilePosition.x -= scrollSpeed * 1.8;
+      state.midRipples.container.x = (naturalX + state.sideImpulse) * 0.42;
+      state.midRipples.container.y = (naturalY + state.bobImpulse) * 0.28;
+    }
+
+    // 雾气微缓飘
+    if (state.mistLayer) {
+      state.mistLayer.alpha = 0.85 + Math.sin(state.time * 0.6) * 0.08;
+    }
+
   };
 
   // ═══════════════════════════════════════════════
   // 完成流程
   // ═══════════════════════════════════════════════
 
-  /**
-   * 击满 totalBeats 后的完成演出：
-   * 1. 播放终击音 + 放大鼓波
-   * 2. 鼓面/甲板退场
-   * 3. 绘制长水痕 + 浮出字粒
-   * 4. 调用 finish() 显示完成态 UI
-   */
   NS.MVPScene.prototype.completeDrum = function (viewport) {
     var scene = this;
     var state = this.state.drum;
-
-    if (state.completing) {
-      return;
-    }
+    if (!state || state.completing) return;
     state.completing = true;
 
-    // 终击鼓波更开阔
-    var ringY = viewport.height * CONFIG.drumY + CONFIG.ringSpawnOffsetY;
-    this.playDrumSound(true);
-    this.spawnDrumRing(
-      viewport.width * CONFIG.drumX, ringY,
-      CONFIG.ringMaxRadius * 1.7, 1.45,
-      state.ringLayer
-    );
-
-    // 绘制持久水痕
-    this.drawFinalWake(viewport);
-
-    // 鼓面退场（下移 + 淡出）
-    global.gsap.killTweensOf(state.drum);
-    global.gsap.killTweensOf(state.boatDeckLayer);
-    var drumExitY = state.drum._usesGeneratedDeck
-      ? viewport.height * 1.04
-      : state.drumBaseY + viewport.height * 0.14;
-    global.gsap.to(state.drum, {
-      y: drumExitY,
-      alpha: 0.36,
-      duration: 0.58,
-      ease: "power2.out"
-    });
-    global.gsap.to(state.boatDeckLayer, {
-      alpha: 0.42,
-      duration: 0.5,
-      ease: "power2.out"
-    });
-
-    // 延迟后显示水痕字粒并进入完成态
-    global.gsap.delayedCall(0.78, function () {
-      scene.spawnWakeWords(viewport);
+    // 浮出尾声字粒
+    this.spawnDrumWakeWords(viewport);
+    // 进入完成态（DOM 显示完成文案与下一幕入口）
+    this.scheduleCall(0.6, function () {
       scene.finish(true);
     });
-
-    this.setHint("鼓声已渡");
   };
 
-  // ═══════════════════════════════════════════════
-  // 轻知识展示
-  // ═══════════════════════════════════════════════
-
-  /**
-   * 完成态显示一个呼吸光点，用户点击后展开轻知识文案。
-   * 遵循交互串联的"随物解锁"模型——用户主动点击才看到知识。
-   * @param {boolean} animate - false 时跳过进入动画（用于场景恢复）
-   */
-  NS.MVPScene.prototype.showDrumKnowledgeDot = function (animate) {
-    var scene = this;
+  /** 完成时浮现的关键字（江/艾/舟/鼓/风），引向下一幕。 */
+  NS.MVPScene.prototype.spawnDrumWakeWords = function (viewport) {
     var state = this.state.drum;
-    var viewport = NS.utils.getViewport(this.app);
+    var words = CONFIG.wakeWords || ["江", "艾", "舟", "鼓", "风"];
+    var waterSlots = [
+      { x: 0.16, y: 0.58 },
+      { x: 0.23, y: 0.67 },
+      { x: 0.74, y: 0.57 },
+      { x: 0.83, y: 0.50 },
+      { x: 0.91, y: 0.54 }
+    ];
 
-    if (!state || state.knowledgeDot) {
-      return;
-    }
-
-    var dot = this.makeCircle(
-      viewport.width * CONFIG.knowledgeDotX,
-      viewport.height * CONFIG.knowledgeDotY,
-      CONFIG.knowledgeDotRadius,
-      CONFIG.knowledgeDotColor,
-      animate === false ? 0.72 : 0
-    );
-    dot.eventMode = "static";
-    dot.cursor = "pointer";
-    dot.hitArea = new PIXI.Circle(0, 0, 24);
-    state.knowledgeDot = dot;
-
-    if (animate !== false) {
-      global.gsap.to(dot, { alpha: 0.72, duration: 0.32, ease: "power2.out" });
-      global.gsap.to(dot.scale, {
-        x: 1.35,
-        y: 1.35,
-        duration: 0.7,
-        repeat: -1,
-        yoyo: true,
-        ease: "sine.inOut"
+    words.forEach(function (word, index) {
+      var slot = waterSlots[index] || waterSlots[waterSlots.length - 1];
+      var fontSize = Math.max(30, CONFIG.wakeWordFontSize + 4);
+      var x = viewport.width * slot.x;
+      var y = viewport.height * slot.y;
+      this.spawnWaterGlyphRipple(state.wordLayer, x, y + fontSize * 0.46, 1.18, 0.22);
+      var label = new PIXI.Text(word, {
+        fontFamily: NS.FONT_STACKS.text,
+        fontSize: fontSize,
+        fill: 0xf4ecd8,
+        stroke: 0x16343a,
+        strokeThickness: 3,
+        dropShadow: true,
+        dropShadowColor: "#f1e8d2",
+        dropShadowBlur: 10,
+        dropShadowAlpha: 0.36,
+        dropShadowDistance: 0
       });
-    }
+      label.anchor.set(0.5);
+      label.alpha = 0;
+      label.position.set(x, y);
+      label.rotation = (index - 2) * 0.025;
+      state.wordLayer.addChild(label);
 
-    dot.on("pointertap", function () {
-      scene.revealDrumKnowledge();
+      global.gsap.to(label, {
+        alpha: 0.88,
+        y: label.y - 12,
+        duration: 0.76,
+        delay: 0.1 + index * 0.12,
+        ease: "sine.out"
+      });
+    }, this);
+  };
+
+  NS.MVPScene.prototype.spawnWaterGlyphRipple = function (layer, x, y, scale, alpha) {
+    var ripple = new PIXI.Graphics();
+    ripple.lineStyle(1.5, 0xf4ecd8, alpha || 0.18);
+    ripple.drawEllipse(0, 0, 28, 8);
+    ripple.lineStyle(1, 0x9eaea3, (alpha || 0.18) * 0.72);
+    ripple.drawEllipse(0, 1, 46, 13);
+    ripple.position.set(x, y);
+    ripple.alpha = 0;
+    layer.addChild(ripple);
+    global.gsap.to(ripple, { alpha: 1, duration: 0.24, ease: "sine.out" });
+    global.gsap.to(ripple.scale, {
+      x: scale || 1,
+      y: (scale || 1) * 0.82,
+      duration: 1.35,
+      ease: "sine.out"
+    });
+    global.gsap.to(ripple, {
+      alpha: 0,
+      duration: 0.62,
+      delay: 0.78,
+      ease: "sine.in",
+      onComplete: function () {
+        if (!ripple.destroyed) ripple.destroy();
+      }
     });
   };
 
-  /** 点击光点后展开轻知识文案，光点停止呼吸变为不可交互。 */
-  NS.MVPScene.prototype.revealDrumKnowledge = function () {
+  // ═══════════════════════════════════════════════
+  // 完成后的轻知识卡片
+  // ═══════════════════════════════════════════════
+
+  NS.MVPScene.prototype.showDrumKnowledgeDot = function (animate) {
     var state = this.state.drum;
-    if (state && state.knowledgeDot) {
-      global.gsap.killTweensOf(state.knowledgeDot.scale);
-      global.gsap.to(state.knowledgeDot, { alpha: 0.18, duration: 0.24 });
-      state.knowledgeDot.cursor = "default";
-      state.knowledgeDot.eventMode = "none";
+    if (state) {
+      state.knowledgeDot = true;
     }
-    if (this.knowledgeText) {
-      this.knowledgeText.alpha = 0;
-      global.gsap.to(this.knowledgeText, { alpha: 0.86, duration: 0.45 });
+    this.revealDrumKnowledge(animate);
+  };
+
+  NS.MVPScene.prototype.revealDrumKnowledge = function (animate) {
+    if (this.app && this.app.dom && this.app.dom.showKnowledgeCard) {
+      var delay = animate === false ? 0 : 0.28;
+      this.scheduleCall(delay, function () {
+        this.app.dom.showKnowledgeCard(DRUM_KNOWLEDGE_TITLE, DRUM_KNOWLEDGE_CONTENT);
+        if (this.app.dom.hideHint) {
+          this.app.dom.hideHint();
+        }
+      }.bind(this));
+      return;
     }
+    var text = (this.knowledgeText && this.knowledgeText.text)
+      ? this.knowledgeText.text
+      : "龙舟竞渡以鼓为令，众桨同频向前。";
+    this.showTimedKnowledgeText(text, 0.86, CONFIG.knowledgeVisibleDuration);
   };
 
 }(window));

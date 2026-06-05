@@ -5,6 +5,7 @@
   var NS = global.ChuJiang = global.ChuJiang || {};
   var utils = NS.utils;
   var config = NS.CONFIG.intro;
+  var FONTS = NS.FONT_STACKS;
 
   function IntroScene(app, manager) {
     this.app = app;
@@ -24,6 +25,12 @@
     this.fogCtx = this.fogCanvas.getContext("2d");
     this.fogTexture = null;
     this.fogSource = null;
+    this.lastFogProgress = null;
+    this.lastFogWidth = 0;
+    this.lastFogHeight = 0;
+    this.audioContext = null;
+    this.riverNoise = null;
+    this.riverGain = null;
 
     this.started = false;
     this.elapsed = 0;
@@ -131,7 +138,7 @@
       return new PIXI.Sprite(texture);
     }
     return new PIXI.Text("入江寻艾", {
-      fontFamily: "ChuJiangWenKai, Songti SC, STSong, FangSong, serif",
+      fontFamily: FONTS.wenkai,
       fontSize: 56,
       fill: 0xf4efe0,
       align: "center",
@@ -144,6 +151,7 @@
     this.started = true;
     this.pressing = false;
     this.elapsed = 0;
+    this.startRiverAmbience();
     this.app.dom.hideHint();
     this.app.dom.showStoryScroll();
     this.app.dom.heroCopy.classList.add("is-muted");
@@ -163,6 +171,66 @@
       this.fogTexture.destroy(true);
       this.fogTexture = null;
     }
+    this.stopRiverAmbience();
+  };
+
+  IntroScene.prototype.startRiverAmbience = function () {
+    var AudioContextClass = global.AudioContext || global.webkitAudioContext;
+    if (!AudioContextClass || this.audioContext) {
+      return;
+    }
+    try {
+      var context = new AudioContextClass();
+      var length = Math.max(1, Math.floor(context.sampleRate * 1.2));
+      var buffer = context.createBuffer(1, length, context.sampleRate);
+      var data = buffer.getChannelData(0);
+      var lowpass = context.createBiquadFilter();
+      var gain = context.createGain();
+      var source = context.createBufferSource();
+      for (var i = 0; i < length; i += 1) {
+        data[i] = (Math.random() * 2 - 1) * 0.42;
+      }
+      source.buffer = buffer;
+      source.loop = true;
+      lowpass.type = "lowpass";
+      lowpass.frequency.setValueAtTime(420, context.currentTime);
+      gain.gain.setValueAtTime(0.0001, context.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.025, context.currentTime + 0.8);
+      source.connect(lowpass);
+      lowpass.connect(gain);
+      gain.connect(context.destination);
+      if (context.state === "suspended" && context.resume) {
+        context.resume();
+      }
+      source.start();
+      this.audioContext = context;
+      this.riverNoise = source;
+      this.riverGain = gain;
+    } catch (error) {
+      console.warn("江水环境声初始化失败:", error);
+    }
+  };
+
+  IntroScene.prototype.stopRiverAmbience = function () {
+    if (this.riverGain && this.audioContext) {
+      try {
+        this.riverGain.gain.exponentialRampToValueAtTime(0.0001, this.audioContext.currentTime + 0.18);
+      } catch (error) {}
+    }
+    if (this.riverNoise) {
+      try {
+        this.riverNoise.stop(this.audioContext.currentTime + 0.22);
+      } catch (error) {}
+      this.riverNoise = null;
+    }
+    if (this.audioContext && this.audioContext.close) {
+      var context = this.audioContext;
+      global.setTimeout(function () {
+        context.close();
+      }, 260);
+    }
+    this.audioContext = null;
+    this.riverGain = null;
   };
 
   IntroScene.prototype.resizeFogCanvas = function (width, height) {
@@ -171,6 +239,7 @@
     if (this.fogCanvas.width !== pixelWidth || this.fogCanvas.height !== pixelHeight) {
       this.fogCanvas.width = pixelWidth;
       this.fogCanvas.height = pixelHeight;
+      this.lastFogProgress = null;
       if (this.fogSprite) {
         this.fogSprite.width = width;
         this.fogSprite.height = height;
@@ -267,6 +336,17 @@
     var ctx = this.fogCtx;
     var width = this.fogCanvas.width;
     var height = this.fogCanvas.height;
+    var roundedProgress = Math.round(progress * 1000) / 1000;
+    if (
+      this.lastFogProgress === roundedProgress &&
+      this.lastFogWidth === width &&
+      this.lastFogHeight === height
+    ) {
+      return;
+    }
+    this.lastFogProgress = roundedProgress;
+    this.lastFogWidth = width;
+    this.lastFogHeight = height;
     ctx.clearRect(0, 0, width, height);
     if (this.fogSource) {
       utils.drawImageCover(ctx, this.fogSource, width, height, 0.92);

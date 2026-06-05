@@ -79,7 +79,7 @@ onExit()     // 清理 Pixi 显示对象和事件
 
 ### 3. AssetLoader
 
-集中加载 `doc/10` 映射资产，支持初始加载和 N+1 预加载。
+集中加载 `doc/03-设计素材/资产映射与开发准则.md` 映射资产，支持初始加载和 N+1 预加载。
 
 ```js
 AssetLoader.loadManifest(manifest)  // 加载一组资产，返回 Promise
@@ -93,7 +93,7 @@ AssetLoader.get(key)                // 获取已加载的 PIXI.Texture
 - `bg-fog-layer.webp`
 - `tex-water-ripple.webp`
 
-预加载时机：进入当前场景时，静默预加载下一场景资产（参照 `doc/10` 第六节分组）。预加载失败不阻塞场景切换，仅 console.warn。
+预加载时机：进入当前场景时，静默预加载下一场景资产（参照 `doc/03-设计素材/资产映射与开发准则.md` 第六节分组）。预加载失败不阻塞场景切换，仅 console.warn。
 
 ### 4. 入江 Pixi 迁移
 

@@ -18,6 +18,7 @@
       return;
     }
     this.loading = true;
+    this.app.dom.clearAction();
     var sceneMeta = SCENES[index];
     // 先保证本场景资源完整，再销毁旧场景，避免切换时出现空白。
     this.app.assets.loadManifest(sceneMeta.assets).then(function () {
@@ -37,7 +38,7 @@
     this.loading = false;
     this.exitCurrentScene();
     this.currentIndex = index;
-    this.app.dom.clearAction();
+    this.app.dom.resetSceneControls();
     this.app.dom.setScene(index, this.completed);
     this.currentScene = this.createScene(index, sceneMeta);
     this.currentScene.onEnter();

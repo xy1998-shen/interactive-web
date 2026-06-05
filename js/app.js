@@ -18,7 +18,13 @@
       return Promise.reject(new Error("本地 PixiJS / GSAP 资源未加载"));
     }
     // 启动顺序固定：渲染器 -> 场景管理 -> 交互绑定 -> 初始资源。
-    this.createRenderer();
+    try {
+      this.createRenderer();
+    } catch (error) {
+      this.dom.showHint("当前浏览器无法启动 WebGL 渲染");
+      console.error("Pixi 渲染器初始化失败:", error);
+      return Promise.reject(error);
+    }
     this.manager = new NS.SceneManager(this);
     this.bindProgress();
     this.bindTicker();
@@ -38,7 +44,10 @@
 
   App.prototype.loadInitialScene = function () {
     var app = this;
-    return this.assets.loadManifest(NS.SCENES[0].assets).then(function () {
+    return this.assets.loadManifest(NS.SCENES[0].assets, function (loaded, total) {
+      var percent = total ? Math.round((loaded / total) * 100) : 100;
+      app.dom.showHint("载入江雾 " + percent + "%");
+    }).then(function () {
       app.manager.goTo(0);
     }).catch(function (error) {
       app.dom.showHint(error.message);
@@ -95,7 +104,10 @@
   global.addEventListener("DOMContentLoaded", function () {
     var app = new App();
     global.ChuJiangApp = app;
-    app.start();
+    app.start().catch(function (error) {
+      app.dom.showHint("体验启动失败，请换用支持 WebGL 的现代浏览器");
+      console.error("应用启动失败:", error);
+    });
   });
 
   NS.App = App;
