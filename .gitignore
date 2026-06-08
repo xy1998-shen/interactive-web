@@ -1,0 +1,10 @@
+.DS_Store
+tmp/
+.omc/
+.claude/
+.qoder/
+.vscode/
+.fontconfig/
+assets/source/
+assets/.DS_Store
+assets/**/.omc/

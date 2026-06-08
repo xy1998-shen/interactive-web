@@ -1,3 +1,4 @@
+// 全局常量：场景顺序、字体栈、资源清单与标题素材映射。
 (function (global) {
   "use strict";
 
@@ -10,15 +11,15 @@
     { id: "wrap", index: "03", name: "裹青", copy: "", assets: ["wrapTable", "leafLeft", "leafRight", "zongzi", "wrapPanel1Prep", "wrapPanel2Wrap", "wrapPanel3Steam", "wrapPanel4Eat"] },
     { id: "drum", index: "04", name: "听鼓", copy: "远鼓入江，舟影渐明。", assets: ["drumBgFirstperson"] },
     { id: "poem", index: "05", name: "问诗", copy: "", assets: ["poemRiversideMarket", "poemWaterPoet", "poemFigureBg", "poemWater", "poemInkRipple", "poemHangingCharm", "poemPaper", "bell"] },
-    { id: "bell", index: "06", name: "和鸣", copy: "沿声波点亮三处回声。", assets: ["bellWater", "bell", "bellGoldTrace", "duanwuPattern", "mugwort", "leafLeft", "boat", "bamboo"] },
-    { id: "finale", index: "07", name: "端午印记", copy: "掠过江面，让艾、粽、舟、钟归成端午印记。", assets: ["finaleEndingBg", "seal", "finalePanel1Memorial", "finalePanel2Race", "finalePanel3Feast", "finalePanel4Night"] }
+    { id: "bell", index: "06", name: "和鸣", copy: "", assets: ["bellWater", "bell", "bellGoldTrace", "duanwuPattern", "mugwort", "leafLeft", "zongzi", "boat", "bamboo"] },
+    { id: "finale", index: "07", name: "端午印记", copy: "回望一路风物，让艾、粽、舟、钟归成端午印记。", assets: ["finaleEndingBg", "seal", "finalePanel0Mugwort", "finalePanel1Memorial", "finalePanel2Race", "finalePanel3Feast", "finalePanel4Night", "finalePanel5Summary"] }
   ];
 
   NS.FONT_STACKS = {
-    text: "Songti SC, STSong, FangSong, Noto Serif CJK SC, serif",
-    wenkai: "ChuJiangWenKai, Songti SC, STSong, FangSong, Noto Serif CJK SC, serif",
-    calligraphy: "ChuJiangCalligraphy, STKaiti, Kaiti SC, KaiTi, Songti SC, STSong, Noto Serif CJK SC, serif",
-    poem: "STKaiti, Kaiti SC, KaiTi, Songti SC, STSong, Noto Serif CJK SC, serif"
+    text: "ChuJiangSerif, Songti SC, STSong, FangSong, Noto Serif CJK SC, serif",
+    wenkai: "ChuJiangWenKaiScreen, Kaiti SC, KaiTi, Songti SC, serif",
+    calligraphy: "ChuJiangZhiSong, ChuJiangSerif, STKaiti, Kaiti SC, KaiTi, Songti SC, serif",
+    poem: "ChuJiangZhiSong, ChuJiangSerif, STKaiti, Kaiti SC, KaiTi, Songti SC, serif"
   };
 
   // 所有运行时资源集中登记，避免路径散落在场景代码里。
@@ -28,7 +29,6 @@
     ripple: "assets/textures/tex-water-ripple.webp",
     nearBoat: "assets/sprites/sprite-near-boat.png",
     introJourneyTitle: "assets/titles/title-action-rujiang-xunai.webp",
-    shore: "assets/backgrounds/bg-shore.webp",
     mugwortVillage: "assets/backgrounds/bg-mugwort-village.webp",
     mugwort: "assets/sprites/sprite-mugwort.webp",
     mugwortHanger: "assets/sprites/sprite-mugwort-hanger.webp",
@@ -40,7 +40,6 @@
     leafRight: "assets/sprites/sprite-leaf-right.webp",
     wrapTable: "assets/backgrounds/bg-wrap-table.png",
     zongzi: "assets/sprites/sprite-zongzi.webp",
-    zongziThread: "assets/sprites/sprite-zongzi-thread.webp",
     poemWaterPoet: "assets/backgrounds/bg-poem-water-poet.png",
     poemFigureBg: "assets/backgrounds/bg-poem-question-figure.png",
     poemWater: "assets/backgrounds/bg-poem-water.webp",
@@ -70,10 +69,12 @@
     // 问诗
     poemRiversideMarket: "assets/backgrounds/poem-riverside-market.png",
     // 尾声面板
+    finalePanel0Mugwort: "assets/backgrounds/finale-panel-0-mugwort.png",
     finalePanel1Memorial: "assets/backgrounds/finale-panel-1-memorial.png",
     finalePanel2Race: "assets/backgrounds/finale-panel-2-race.png",
     finalePanel3Feast: "assets/backgrounds/finale-panel-3-feast.png",
-    finalePanel4Night: "assets/backgrounds/finale-panel-4-night.png"
+    finalePanel4Night: "assets/backgrounds/finale-panel-4-night.png",
+    finalePanel5Summary: "assets/backgrounds/finale-panel-5-summary.png"
   };
 
   NS.TITLE_ASSETS = {

@@ -1,8 +1,10 @@
+// 图片资源加载器：按 manifest key 加载、缓存并提供 fallback。
 (function (global) {
   "use strict";
 
   var NS = global.ChuJiang = global.ChuJiang || {};
 
+  // manifest 为资源 key 到相对路径的映射。
   function AssetLoader(manifest) {
     this.manifest = manifest;
     this.textures = {};
@@ -10,6 +12,7 @@
     this.promises = {};
   }
 
+  // 批量加载资源，并可回调加载进度。
   AssetLoader.prototype.loadManifest = function (keys, onProgress) {
     var loader = this;
     var total = keys.length;
@@ -28,12 +31,14 @@
     }));
   };
 
+  // 静默预加载，不阻塞当前场景。
   AssetLoader.prototype.preload = function (keys) {
     this.loadManifest(keys).catch(function (error) {
       console.warn("预加载失败:", error);
     });
   };
 
+  // 加载单个资源；失败时生成程序化 fallback 纹理。
   AssetLoader.prototype.load = function (key) {
     var loader = this;
     var src = this.manifest[key];
@@ -65,6 +70,7 @@
     return this.promises[key];
   };
 
+  // 生成缺图兜底画布，保证场景仍可继续运行。
   AssetLoader.prototype.createFallbackCanvas = function (key) {
     var canvas = document.createElement("canvas");
     var ctx = canvas.getContext("2d");
@@ -128,10 +134,6 @@
       bg.addColorStop(0, "#d7e8e4");
       bg.addColorStop(0.52, "#edf4e8");
       bg.addColorStop(1, "#eadba8");
-    } else if (key === "shore") {
-      bg.addColorStop(0, "#d8ebe2");
-      bg.addColorStop(0.58, "#edf5ef");
-      bg.addColorStop(1, "#a9c5b2");
     } else if (key === "poemWater" || key === "bamboo" || key === "poemFigureBg" || key === "poemWaterPoet") {
       bg.addColorStop(0, "#dfeee9");
       bg.addColorStop(0.55, "#c8dfdb");
@@ -395,6 +397,7 @@
     ctx.stroke();
   };
 
+  // 读取已加载的 Pixi Texture。
   AssetLoader.prototype.get = function (key) {
     var texture = this.textures[key];
     if (!texture) {
@@ -403,6 +406,7 @@
     return texture;
   };
 
+  // 读取原始 Image/Canvas，供 canvas 重绘类场景使用。
   AssetLoader.prototype.getImage = function (key) {
     return this.images[key];
   };

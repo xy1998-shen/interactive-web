@@ -50,9 +50,9 @@
   ].join("");
 
   // 自动播放配置
-  var AUTOPLAY_INTERVAL_MS = 5000;
-  var KNOWLEDGE_DWELL_SEC = 3;   // 第 4 面板停留多久后展示知识卡
-  var COMPLETE_DELAY_SEC = 3;    // 知识卡展示后多久标记完成
+  var AUTOPLAY_INTERVAL_MS = 3200;
+  var KNOWLEDGE_DWELL_SEC = 1.4; // 第 4 面板停留多久后展示知识卡
+  var COMPLETE_DELAY_SEC = 1.8;  // 知识卡展示后多久标记完成
 
   // ---------------- 各面板动态元素构建 ----------------
   // 这些函数以 scene 为 this，会被 initPanels 在创建面板时调用一次。
@@ -325,7 +325,7 @@
     }
   };
 
-  // 第 4 面板停留 3 秒后展示知识卡，再 3 秒后标记完成
+  // 第 4 面板短暂停留后展示知识卡，再稍作停顿标记完成
   NS.MVPScene.prototype.scheduleWrapKnowledge = function () {
     var scene = this;
     var st = this.state.wrap;
@@ -352,6 +352,7 @@
   };
 
   // 兼容 base-scene 中 FINISH_HANDLERS.wrap 的旧调用：新版无需 PIXI 知识点
+  // 旧版知识点入口保留为空实现，避免完成处理调用时报错。
   NS.MVPScene.prototype.showWrapKnowledgeDot = function () {};
 
   // ---------------- 每帧粒子驱动：通过 ticker 实例级绑定 ----------------
@@ -375,6 +376,7 @@
     });
   };
 
+  // 每帧推进裹青子面板里的线条、蒸汽等轻动效。
   function updateWrapDynamics(scene) {
     var dyn = scene.state && scene.state.wrapDynamics;
     if (!dyn) {
@@ -422,6 +424,7 @@
   // ---------------- 暴露 NS.WrapScene 类（继承自 MVPScene） ----------------
   // scene-manager 当前仍构造 MVPScene；该类作为后续重构的接入点保留，
   // 同时让外部代码可以以 instanceof NS.WrapScene 判断本幕。
+  // 裹青场景类保留为后续独立实例化入口。
   function WrapScene(app, manager, meta, index) {
     NS.MVPScene.call(this, app, manager, meta, index);
   }

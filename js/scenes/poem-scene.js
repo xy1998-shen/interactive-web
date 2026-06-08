@@ -94,6 +94,7 @@
   var POEM_DB_KEYS = Object.keys(POEM_DB).sort();
   var POEM_FONT_STACK = FONTS.poem;
 
+  // 根据已选字匹配稳定诗句，失败时用首字兜底。
   function matchPoem(selected) {
     if (!selected || !selected.length) {
       return "";
@@ -198,6 +199,7 @@
     circle.drawEllipse(1, 0, rx * 1.06, ry * 0.92);
   }
 
+  // 构建问诗场景入场长幅和选字层。
   NS.MVPScene.prototype.buildPoem = function (viewport) {
     var scene = this;
     var words = CONFIG.words || [];
@@ -264,6 +266,7 @@
   };
 
   // 平移完成后启动选字交互（保留原有所有构建逻辑）
+  // 入场定格后开启选字交互。
   NS.MVPScene.prototype.startPoemInteractive = function (viewport, group, words) {
     if (!this.state.poem || !this.container) return;
 
@@ -456,6 +459,7 @@
     global.gsap.to(entry, { alpha: 0, duration: 0.8, delay: 2.4, ease: "sine.in" });
   };
 
+  // 创建可点击字粒。
   NS.MVPScene.prototype.createPoemWords = function (viewport, group, words) {
     var scene = this;
     var wordSlots = CONFIG.wordSlots || [];
@@ -626,6 +630,7 @@
     });
   };
 
+  // 选择一个字粒，并在满三字后完成本轮。
   NS.MVPScene.prototype.selectPoemWord = function (label) {
     var state = this.state.poem;
     if (!state || state.transitioning || state.roundComplete || state.panActive || !label) return;
@@ -727,6 +732,7 @@
     });
   };
 
+  // 三字选满后匹配诗句并展示结果。
   NS.MVPScene.prototype.completePoemRound = function () {
     var scene = this;
     var state = this.state.poem;
@@ -804,6 +810,7 @@
     state.poemAxis = null;
   };
 
+  // 绘制问诗纸笺上的成诗结果。
   NS.MVPScene.prototype.drawPoemAxisResult = function (poem) {
     var state = this.state.poem;
     if (!state || !state.result || !poem) return;
@@ -930,6 +937,7 @@
     });
   };
 
+  // 重置本轮问诗，保留场景上下文。
   NS.MVPScene.prototype.resetPoemRound = function () {
     var scene = this;
     var state = this.state.poem;
@@ -999,6 +1007,7 @@
     global.gsap.to(this.knowledgeText, { alpha: 0, duration: 0.5, delay: 4.2, ease: "sine.in" });
   };
 
+  // 完成问诗后播放过渡并进入下一幕。
   NS.MVPScene.prototype.playPoemTransition = function () {
     var scene = this;
     var state = this.state.poem;

@@ -1,3 +1,4 @@
+// DOM 浮层控制：标题、提示、进度、故事卷轴与知识卡。
 (function (global) {
   "use strict";
 
@@ -9,6 +10,7 @@
     subtitle: "顺水入江，在雾青江光里寻端午旧物。"
   };
 
+  // 缓存所有 DOM 节点，提供场景可调用的显示接口。
   function DOMLayer() {
     this.chapterIndex = document.getElementById("chapter-index");
     this.chapterName = document.getElementById("chapter-name");
@@ -38,13 +40,14 @@
     this.knowledgeCardToggle = null;
   }
 
+  // 切换章节文案和底部进度状态。
   DOMLayer.prototype.setScene = function (sceneIndex, completedScenes) {
     var scene = SCENES[sceneIndex];
     var progressRatio = this.nodes.length <= 1 ? 0 : sceneIndex / (this.nodes.length - 1);
     this.chapterIndex.textContent = scene.index;
     this.chapterName.textContent = scene.name;
     if (this.chapterMark) {
-      this.chapterMark.classList.toggle("is-suppressed", scene.id === "bell" || scene.id === "finale");
+      this.chapterMark.classList.toggle("is-suppressed", scene.id === "finale");
     }
     this.hint.classList.toggle("is-bell", scene.id === "bell");
     this.setSceneCopy(scene);
@@ -56,6 +59,7 @@
     });
   };
 
+  // 根据场景元信息刷新主标题、副标题和标题图。
   DOMLayer.prototype.setSceneCopy = function (scene) {
     if (scene.id === "intro") {
       this.eyebrow.textContent = INTRO_COPY.eyebrow;
@@ -74,6 +78,7 @@
     this.setTitleArt(NS.TITLE_ASSETS && NS.TITLE_ASSETS[scene.id]);
   };
 
+  // 为眉题设置透明标题图；失败时回退文本。
   DOMLayer.prototype.setEyebrowArt = function (src) {
     var cssSrc;
     if (!src) {
@@ -96,6 +101,7 @@
     this.eyebrowArtProbe.src = src;
   };
 
+  // 为主标题设置透明标题图；失败时回退文本。
   DOMLayer.prototype.setTitleArt = function (src) {
     var cssSrc;
     if (!src) {
@@ -118,6 +124,7 @@
     this.titleArtProbe.src = src;
   };
 
+  // 根据第一幕进度调整首屏文字和提示。
   DOMLayer.prototype.setIntroProgress = function (progress) {
     var config = NS.CONFIG.intro;
     var visible = progress >= config.heroVisibleProgress;
@@ -131,7 +138,7 @@
     } else if (progress > 0.04) {
       this.hint.textContent = "江雾渐开";
     } else {
-      this.hint.textContent = "按住拖动，拨开江雾";
+      this.hint.textContent = "轻触画面，拨开江雾";
     }
     if (progress < 1) {
       this.hideIntroCta();
@@ -141,7 +148,7 @@
   DOMLayer.prototype.setIntroWaiting = function () {
     this.heroCopy.classList.add("is-muted");
     this.hint.style.setProperty("--intro-progress", "0");
-    this.showHint("按住拖动，拨开江雾");
+    this.showHint("轻触画面，拨开江雾");
     this.hideIntroCta();
     this.hideStoryScroll();
   };

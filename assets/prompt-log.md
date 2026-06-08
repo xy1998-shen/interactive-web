@@ -6,42 +6,39 @@
 
 原图目录：`/Users/eleme/.codex/generated_images/019e551a-c5f1-7991-bd87-ca7dc3927d20`
 
-规范来源：
-
-- `doc/03-设计素材/素材管理.md`
-- `doc/03-设计素材/提示词管理.md`
+规范来源：历史素材规范文档（现已清理）。
 
 ## 入库清单
 
 | 输出文件 | 版本 | 类型 | 原图 | 后处理 |
 | --- | --- | --- | --- | --- |
 | `assets/backgrounds/bg-river-mist-light.webp` | v1 | 背景 | `ig_097ab1b4c402efa7016a11b1f2602881989b472e450fbe8e6c.png` | 1920x1080，WebP q80 |
-| `assets/backgrounds/bg-river-dark.webp` | v1 | 背景 | `ig_097ab1b4c402efa7016a11b1f2602881989b472e450fbe8e6c.png` | 1920x1080，压暗校色，WebP q80 |
+| 已删除的暗色江面备用图 | v1 | 背景 | `ig_097ab1b4c402efa7016a11b1f2602881989b472e450fbe8e6c.png` | 1920x1080，压暗校色，WebP q80 |
 | `assets/backgrounds/bg-fog-layer.webp` | v1 | 背景/遮罩 | `ig_097ab1b4c402efa7016a11b22276948198a98a6c0bed61a65b.png` | 1920x1080，WebP q80，保留黑底用于 screen/alpha |
-| `assets/backgrounds/bg-shore.webp` | v1 | 背景 | `ig_097ab1b4c402efa7016a11b2ab4d1481988c74f5b46c137df3.png` | 1920x540，WebP q80 |
+| 已清理的江岸备用图 | v1 | 背景 | `ig_097ab1b4c402efa7016a11b2ab4d1481988c74f5b46c137df3.png` | 未被运行时加载，已从项目移除 |
 | `assets/backgrounds/bg-poem-water.webp` | v1 | 背景 | `ig_097ab1b4c402efa7016a11b3d200888198a5b8ac406543cee0.png` | 1920x1080，WebP q80 |
 | `assets/backgrounds/bg-bamboo.webp` | v1 | 背景 | `ig_097ab1b4c402efa7016a11b6d1227481989360420f97280db5.png` | 512x1024，WebP q75 |
 | `assets/textures/tex-water-ripple.webp` | v1 | 纹理 | `ig_097ab1b4c402efa7016a11b245ec188198bf94959d866ffd97.png` | 512x512，WebP q80 |
 | `assets/textures/tex-pattern-duanwu.webp` | v1 | 纹理 | `ig_097ab1b4c402efa7016a11b3f150f08198a109f42d2e5dd691.png` | 512x512，WebP q80 |
-| `assets/textures/tex-noise-perlin.png` | v1 | 纹理 | 本地生成 | 256x256，8bit 灰度 PNG |
-| `assets/textures/tex-noise-displacement.png` | v1 | 纹理 | 本地生成 | 256x256，8bit 灰度 PNG |
+| 运行时已移除的噪声纹理 | v1 | 纹理 | 本地生成 | 256x256，8bit 灰度 PNG |
+| 运行时已移除的置换纹理 | v1 | 纹理 | 本地生成 | 256x256，8bit 灰度 PNG |
 | `assets/sprites/sprite-mugwort.webp` | v1 | 精灵 | `ig_097ab1b4c402efa7016a11b282fc10819891806c75426e6634.png` | 白底抠除，512x512，透明 WebP q85 |
-| `assets/sprites/sprite-drum.webp` | v1 | 精灵 | `ig_097ab1b4c402efa7016a11b2cc1cb48198a3f961ae34858716.png` | 白底抠除，512x512，透明 WebP q85 |
+| 已删除的听鼓旧方案备用素材 | v1 | 精灵 | `ig_097ab1b4c402efa7016a11b2cc1cb48198a3f961ae34858716.png` | 白底抠除，512x512，透明 WebP q85 |
 | `assets/sprites/sprite-boat.webp` | v1 | 精灵 | `ig_097ab1b4c402efa7016a11b2e80df08198a5576d898c087c6e.png` | 白底抠除，1024x384，透明 WebP q85 |
-| `assets/sprites/sprite-bell.webp` | v1 | 精灵 | `ig_097ab1b4c402efa7016a11b30c16408198a8289c17b8433209.png` | 白底抠除，384x768，透明 WebP q85 |
-| `assets/backgrounds/bg-bell-water.png` | v2 | 背景 | `assets/source/bell-stage-bg-generated-20260528.png` | 用户生成图入库，楚乐台 / 礼乐厅空间 |
-| `assets/sprites/sprite-bell.png` | v2 | 精灵 | `assets/source/bell-v2-generated-20260528.png` | 棋盘格背景去底，713x840，透明 PNG |
+| 已删除的旧版编钟 WebP | v1 | 精灵 | `ig_097ab1b4c402efa7016a11b30c16408198a8289c17b8433209.png` | 白底抠除，384x768，透明 WebP q85 |
+| `assets/backgrounds/bg-bell-water.png` | v2 | 背景 | 源稿已清理，不随项目保留 | 用户生成图入库，楚乐台 / 礼乐厅空间 |
+| `assets/sprites/sprite-bell.png` | v2 | 精灵 | 源稿已清理，不随项目保留 | 棋盘格背景去底，713x840，透明 PNG |
 | `assets/sprites/sprite-leaf-left.webp` | v1 | 精灵 | `ig_097ab1b4c402efa7016a11b343c208819896e3c45c16fce033.png` | 白底抠除，512x512，透明 WebP q85 |
 | `assets/sprites/sprite-leaf-right.webp` | v1 | 精灵 | `ig_097ab1b4c402efa7016a11b3608358819890baf14b7eba36ff.png` | 白底抠除，512x512，透明 WebP q85 |
 | `assets/sprites/sprite-seal.webp` | v1 | 精灵 | `ig_097ab1b4c402efa7016a11b38d140481988d7e4965e65a4c09.png` | 白底抠除，512x512，透明 WebP q90 |
-| `assets/svg/vec-leaf-outline.svg` | v1 | 矢量 | 手工绘制 | 控制点简化，用于过渡 morph |
-| `assets/svg/vec-boat-hull.svg` | v1 | 矢量 | 手工绘制 | 控制点简化，用于过渡 morph |
-| `assets/svg/vec-ripple-ring.svg` | v1 | 矢量 | 手工绘制 | 控制点简化，用于过渡 morph |
-| `assets/svg/vec-seal-frame.svg` | v1 | 矢量 | 手工绘制 | 控制点简化，用于过渡 morph |
+| Pixi Graphics 叶形线 | v1 | 矢量 | 手工绘制 | 控制点简化，用于过渡 morph |
+| Pixi Graphics 船形线 | v1 | 矢量 | 手工绘制 | 控制点简化，用于过渡 morph |
+| Pixi Graphics 圆环 | v1 | 矢量 | 手工绘制 | 控制点简化，用于过渡 morph |
+| Pixi Graphics 印记框 | v1 | 矢量 | 手工绘制 | 控制点简化，用于过渡 morph |
 
 ## 使用 Prompt
 
-本次使用 `doc/03-设计素材/提示词管理.md` 的核心素材 Prompt 母版，并按下列差异执行：
+本次使用历史核心素材 Prompt 母版，并按下列差异执行：
 
 - `bg-river-mist-light`：使用“雾青江面” prompt。
 - `bg-river-dark`：由 `bg-river-mist-light` 同源图压暗校色生成，避免回到全黑夜景。
@@ -56,8 +53,38 @@
 
 已知限制：
 
-- 字体子集已生成并入库：`assets/fonts/LXGWWenKai-subset.woff2` 用于 `ChuJiangWenKai`，`assets/fonts/AaDongQiChangYueYangLouJi-subset.woff2` 用于 `ChuJiangCalligraphy`。Aa 字体来源标注“非商业使用”，如后续商用需替换授权明确的书法字体。
+- 字体子集已生成并入库：运行时使用 `assets/fonts/*-subset.woff2`，完整 TTF/OTF 不随项目保留。Aa 字体来源标注“非商业使用”，如后续商用需替换授权明确的书法字体。
 - 精灵类为白底抠图后透明 WebP，后续进入 PixiJS 后建议在深浅两种背景上再做一次边缘检查。
+
+## 第七幕尾声补充分镜素材 / v1 / 2026-06-08
+
+规范来源：
+
+- `doc/03-逐幕剧本/07-尾声.md`
+- 用户反馈：最后一幕过乱，优先复用四张 `finale-panel-*`，再补齐两张同风格素材。
+
+生成方式：Codex built-in image_gen。
+
+源图目录：`/Users/eleme/.codex/generated_images/019ea02d-dc89-7bc2-a5ae-0b42ae8adc14`
+
+入库文件：
+
+| 输出文件 | 版本 | 类型 | 源图归档 | 后处理 |
+| --- | --- | --- | --- | --- |
+| `assets/backgrounds/finale-panel-0-mugwort.png` | v1 | 尾声开场分镜 | `ig_0c2672f2ec325152016a2554814b0c8190aaf765394358f3c4.png` | 未处理，保留 PNG 原图 |
+| `assets/backgrounds/finale-panel-5-summary.png` | v1 | 尾声汇总分镜 | `ig_0b022805a2273ab7016a26236cf7848198b2e02eb166563143.png` | 未处理，保留 PNG 原图 |
+
+### Prompt
+
+`finale-panel-0-mugwort`：生成 16:9 沉浸式网页背景，表现晨雾楚江、远舟、岸边门廊和悬挂清艾，使用雾青、浅水青、米白、深墨绿和少量青铜金，保留下方 / 中央留白，禁止文字、水印、现代建筑和密集粒子。
+
+`finale-panel-5-summary`：生成 16:9 最终汇总长卷，表现安静楚江、人物背影、由艾叶、粽叶、舟痕和钟波组成的圆形端午印记；中心和下方留给运行时印章、短文案和按钮，禁止伪中文、UI、密集符号、商业海报感和高频发光粒子。
+
+### 生成结果
+
+- `finale-panel-0-mugwort`：艾草和晨雾关系清楚，适合作为第七幕回望的第一张，承接“入江 / 寻艾”。
+- `finale-panel-5-summary`：人物、江面和端午印记同屏成立，但符号比原 ending 背景更克制，适合作为最终收束背景。
+- 状态：`finale-v1`
 
 ## bg-mugwort-village / v2 / 第二幕寻艾背景 / 2026-05-25
 
@@ -65,7 +92,7 @@
 
 入库文件：
 
-- 原始源图：`assets/source/mugwort-village-generated-20260525.png`
+- 原始源图：源稿已清理，不随项目保留
 - WebP 背景：`assets/backgrounds/bg-mugwort-village.webp`
 
 后处理：
@@ -89,9 +116,9 @@
 
 入库文件：
 
-- 背景源图：`assets/source/mugwort-village-generated-20260525-v2.png`
-- 人物源图：`assets/source/mugwort-hanger-generated-20260525.png`
-- 艾草束源图：`assets/source/mugwort-hanging-bundle-generated-20260525.png`
+- 背景源图：源稿已清理，不随项目保留
+- 人物源图：源稿已清理，不随项目保留
+- 艾草束源图：源稿已清理，不随项目保留
 - 背景成品：`assets/backgrounds/bg-mugwort-village.webp`
 - 人物精灵：`assets/sprites/sprite-mugwort-hanger.webp`
 - 悬挂艾草束精灵：`assets/sprites/sprite-mugwort-hanging-bundle.webp`
@@ -103,10 +130,7 @@
 
 ## 第三至第七幕优化素材 / v2 / 2026-05-25
 
-规范来源：
-
-- `doc/03-设计素材/提示词管理.md`
-- `doc/03-设计素材/素材管理.md`
+规范来源：历史素材规范文档（现已清理）。
 
 生成方式：GPT 图像生成 + 本地 chroma key 去底 + sharp 后处理。
 
@@ -116,24 +140,20 @@
 
 | 输出文件 | 版本 | 类型 | 源图归档 | 后处理 |
 | --- | --- | --- | --- | --- |
-| `assets/sprites/sprite-zongzi.webp` | v1 | 精灵 | `assets/source/zongzi-generated-20260525.png` | #ff00ff 背景抠除，512x512，透明 WebP q85 |
-| `assets/sprites/sprite-zongzi-thread.webp` | v1 | 精灵 | `assets/source/zongzi-thread-generated-20260525.png` | #ff00ff 背景抠除，800x200，透明 WebP q85 |
-| `assets/textures/tex-pattern-duanwu.webp` | v2 | 纹理 | `assets/source/tex-pattern-duanwu-v2-generated-20260525.png` | 512x512，WebP q80，替换 v1 暗纹 |
+| `assets/sprites/sprite-zongzi.webp` | v1 | 精灵 | 源稿已清理，不随项目保留 | #ff00ff 背景抠除，512x512，透明 WebP q85 |
+| `assets/textures/tex-pattern-duanwu.webp` | v2 | 纹理 | 源稿已清理，不随项目保留 | 512x512，WebP q80，替换 v1 暗纹 |
 
 ### Prompt
 
-`sprite-zongzi` 使用 `提示词管理.md` 第十二节“sprite-zongzi 粽形完成态”prompt，并增加纯 `#ff00ff` 背景要求用于本地去底。
+`sprite-zongzi` 使用历史提示词文档第十二节“sprite-zongzi 粽形完成态”prompt，并增加纯 `#ff00ff` 背景要求用于本地去底。
 
-`sprite-zongzi-thread` 使用 `提示词管理.md` 第十二节“sprite-zongzi-thread 缠线精灵”prompt，并增加纯 `#ff00ff` 背景要求用于本地去底。
-
-`tex-pattern-duanwu` 使用 `提示词管理.md` 第十二节“tex-pattern-duanwu / v2 端午暗纹优化”prompt。
+`tex-pattern-duanwu` 使用历史提示词文档第十二节“tex-pattern-duanwu / v2 端午暗纹优化”prompt。
 
 ### 生成结果
 
 - 变体数量：每个目标素材生成 1 张候选。
 - 入选：
   - `sprite-zongzi`：三角粽形轮廓清楚，叶面水墨肌理和金色缠线可识别。
-  - `sprite-zongzi-thread`：横向主体完整，适合作为拖拽缠线增强素材。
   - `tex-pattern-duanwu`：低对比水波、艾叶和舟线纹样，无文字和明显中心主体。
 - 淘汰原因：本次无额外候选淘汰。
 
@@ -143,7 +163,6 @@
 - 色彩校正：保留生成结果主色，未额外提高饱和度，避免偏商业国潮。
 - 尺寸与压缩：
   - `sprite-zongzi.webp`：512x512，alpha 通道有效。
-  - `sprite-zongzi-thread.webp`：800x200，alpha 通道有效。
   - `tex-pattern-duanwu.webp`：512x512，低对比叠层纹理。
 - 状态：`final-v2`
 
@@ -157,8 +176,8 @@
 
 规范来源：
 
-- `doc/05-逐幕开发文档/03-裹青.md`
-- `doc/03-设计素材/提示词管理.md`
+- `doc/03-逐幕剧本/03-裹青.md`
+- 历史素材提示词文档（现已清理）
 
 来源：
 
@@ -170,22 +189,22 @@
 
 | 输出文件 | 版本 | 类型 | 源图归档 | 后处理 |
 | --- | --- | --- | --- | --- |
-| `assets/backgrounds/bg-wrap-table.webp` | v3 | 背景 | `assets/source/wrap-table-generated-20260526.png` | 1920x1080，WebP q80 |
-| `assets/sprites/sprite-zongzi.webp` | v2 | 精灵 | `assets/source/zongzi-generated-20260526.png` | 白底边缘抠除，512x512，透明 lossless WebP |
-| `assets/sprites/sprite-zongzi-thread.webp` | v2 | 精灵 | `assets/source/zongzi-thread-generated-20260526.png` | 白底低饱和区域抠除，800x200，透明 lossless WebP |
+| `assets/backgrounds/bg-wrap-table.png` | v3 | 背景 | 源稿已清理，不随项目保留 | 1920x1080，WebP q80 |
+| `assets/sprites/sprite-zongzi.webp` | v2 | 精灵 | 源稿已清理，不随项目保留 | 白底边缘抠除，512x512，透明 lossless WebP |
+| 已清理的缠线精灵 | v2 | 精灵 | 源稿已清理，不随项目保留 | 未被运行时加载，已从项目移除 |
 
 ### 生成结果
 
 - `bg-wrap-table`：临水屋舍、旧木桌、窗外江光和包粽材料清晰，适合作为第三幕主背景。
 - `sprite-zongzi`：三角粽形识别度高，缠线与叶面水墨质感清楚。
-- `sprite-zongzi-thread`：横向线段完整，已去除白底和块状边缘伪影。
+- 缠线精灵：后续未被运行时采用，已用代码线条替代并移出项目。
 
 ### 验证
 
-- `bg-wrap-table.webp`：1920x1080，无 alpha。
+- `bg-wrap-table.png`：1920x1080，无 alpha。
 - `sprite-zongzi.webp`：512x512，alpha 通道有效。
-- `sprite-zongzi-thread.webp`：800x200，alpha 通道有效。
-- 三张原始 PNG 已归档到 `assets/source/`。
+- 缠线精灵：已移除，运行时不加载。
+- 三张原始 PNG 已归档到 `已清理源稿目录/`。
 
 ## 第五幕问诗人物背景 / v2 / 2026-05-27
 
@@ -197,7 +216,7 @@
 
 | 输出文件 | 版本 | 类型 | 源图归档 | 后处理 |
 | --- | --- | --- | --- | --- |
-| `assets/backgrounds/bg-poem-question-figure.png` | v2 | 背景 | `assets/source/poem-question-figure-generated-20260527.png` | 未处理，保留 PNG 原图 |
+| `assets/backgrounds/bg-poem-question-figure.png` | v2 | 背景 | 源稿已清理，不随项目保留 | 未处理，保留 PNG 原图 |
 
 ### 备注
 
@@ -213,7 +232,7 @@
 
 规范来源：
 
-- `doc/05-逐幕开发文档/05-问诗.md`
+- `doc/03-逐幕剧本/05-问诗.md`
 
 状态：
 
@@ -228,7 +247,7 @@
 
 | 输出文件 | 版本 | 类型 | 源图归档 | 后处理 |
 | --- | --- | --- | --- | --- |
-| `assets/backgrounds/bg-poem-water-poet.webp` | v1 | 背景 | `assets/source/poem-water-poet-generated-20260527.png` | WebP q82 |
+| `assets/backgrounds/bg-poem-water-poet.png` | v1 | 背景 | 源稿已清理，不随项目保留 | WebP q82 |
 
 ### 中文 Prompt
 
@@ -250,8 +269,8 @@
 
 ### 验证
 
-- `assets/source/poem-water-poet-generated-20260527.png`：1672x941，RGB PNG。
-- `assets/backgrounds/bg-poem-water-poet.webp`：1672x941，RGB WebP，约 130KB。
+- 源稿已清理，不随项目保留：1672x941，RGB PNG。
+- `assets/backgrounds/bg-poem-water-poet.png`：1672x941，RGB WebP，约 130KB。
 
 ## 第五幕墨滴涟漪交互素材 / v1 / 2026-05-27
 
@@ -263,7 +282,7 @@
 
 | 输出文件 | 版本 | 类型 | 源图归档 | 后处理 |
 | --- | --- | --- | --- | --- |
-| `assets/sprites/sprite-poem-ink-ripple.png` | v1 | 透明交互精灵 | `assets/source/poem-ink-ripple-generated-20260527.png` | 裁切主体，清理低 alpha 边缘，整体 alpha 降至 72% |
+| `assets/sprites/sprite-poem-ink-ripple.png` | v1 | 透明交互精灵 | 源稿已清理，不随项目保留 | 裁切主体，清理低 alpha 边缘，整体 alpha 降至 72% |
 
 ### 用途
 
@@ -272,15 +291,12 @@
 
 ### 验证
 
-- `assets/source/poem-ink-ripple-generated-20260527.png`：1536x1024，RGBA PNG。
+- 源稿已清理，不随项目保留：1536x1024，RGBA PNG。
 - `assets/sprites/sprite-poem-ink-ripple.png`：712x363，RGBA PNG，alpha 通道有效。
 
 ## 全局标题艺术字 / v1 / 2026-05-27
 
-规范来源：
-
-- `doc/03-设计素材/提示词管理.md`
-- `doc/03-设计素材/素材管理.md`
+规范来源：历史素材规范文档（现已清理）。
 
 状态：
 
@@ -308,21 +324,21 @@
 
 | 输出文件 | 文案 | 源图归档 | 后处理 |
 | --- | --- | --- | --- |
-| `assets/titles/title-main-chujiang-xunai.webp` | 楚江寻艾 | `assets/source/title-main-chujiang-xunai-generated-20260527.png` | 绿底抠图为透明 WebP |
-| `assets/titles/title-scene-01-rujiang.webp` | 入江 | `assets/source/title-scene-01-rujiang-generated-20260527.png` | 绿底抠图为透明 WebP |
-| `assets/titles/title-scene-02-xunai.webp` | 寻艾 | `assets/source/title-scene-02-xunai-generated-20260527.png` | 绿底抠图为透明 WebP |
-| `assets/titles/title-scene-03-guoqing.webp` | 裹青 | `assets/source/title-scene-03-guoqing-generated-20260527.png` | 绿底抠图为透明 WebP |
-| `assets/titles/title-scene-04-tinggu.webp` | 听鼓 | `assets/source/title-scene-04-tinggu-generated-20260527.png` | 绿底抠图为透明 WebP |
-| `assets/titles/title-scene-05-wenshi.webp` | 问诗 | `assets/source/title-scene-05-wenshi-generated-20260527.png` | 绿底抠图为透明 WebP |
-| `assets/titles/title-scene-06-heming.webp` | 和鸣 | `assets/source/title-scene-06-heming-generated-20260527.png` | 绿底抠图为透明 WebP |
-| `assets/titles/title-scene-07-duanwu-yinji.webp` | 端午印记 | `assets/source/title-scene-07-duanwu-yinji-generated-20260527.png` | 绿底抠图为透明 WebP |
-| `assets/titles/title-action-rujiang-xunai.webp` | 入江寻艾 | `assets/source/title-action-rujiang-xunai-generated-20260527.png` | 绿底抠图为透明 WebP |
-| `assets/titles/title-action-bokai-jiangwu.webp` | 拨开江雾 | `assets/source/title-action-bokai-jiangwu-generated-20260527.png` | 绿底抠图为透明 WebP |
-| `assets/titles/title-action-sui-zhou-xunai.webp` | 随舟寻艾 | `assets/source/title-action-sui-zhou-xunai-generated-20260527.png` | 绿底抠图为透明 WebP |
+| `assets/titles/title-main-chujiang-xunai.webp` | 楚江寻艾 | 源稿已清理，不随项目保留 | 绿底抠图为透明 WebP |
+| `assets/titles/title-scene-01-rujiang.webp` | 入江 | 源稿已清理，不随项目保留 | 绿底抠图为透明 WebP |
+| `assets/titles/title-scene-02-xunai.webp` | 寻艾 | 源稿已清理，不随项目保留 | 绿底抠图为透明 WebP |
+| `assets/titles/title-scene-03-guoqing.webp` | 裹青 | 源稿已清理，不随项目保留 | 绿底抠图为透明 WebP |
+| `assets/titles/title-scene-04-tinggu.webp` | 听鼓 | 源稿已清理，不随项目保留 | 绿底抠图为透明 WebP |
+| `assets/titles/title-scene-05-wenshi.webp` | 问诗 | 源稿已清理，不随项目保留 | 绿底抠图为透明 WebP |
+| `assets/titles/title-scene-06-heming.webp` | 和鸣 | 源稿已清理，不随项目保留 | 绿底抠图为透明 WebP |
+| `assets/titles/title-scene-07-duanwu-yinji.webp` | 端午印记 | 源稿已清理，不随项目保留 | 绿底抠图为透明 WebP |
+| `assets/titles/title-action-rujiang-xunai.webp` | 入江寻艾 | 源稿已清理，不随项目保留 | 绿底抠图为透明 WebP |
+| `assets/titles/title-action-bokai-jiangwu.webp` | 拨开江雾 | 源稿已清理，不随项目保留 | 绿底抠图为透明 WebP |
+| `assets/titles/title-action-sui-zhou-xunai.webp` | 随舟寻艾 | 源稿已清理，不随项目保留 | 绿底抠图为透明 WebP |
 
 ### 验证
 
-- 联系表：`tmp/imagegen/title-assets/contact-sheet.webp`。
+- 临时联系表已随 `tmp/` 过程文件清理。
 - WebP 输出均带 alpha 通道。
 
 ### 补充：入江交互中水雾浮字
@@ -330,7 +346,7 @@
 ```text
 文字内容：入江寻艾。
 
-用途：第一幕点击江面后，在雾中浮现再淡出的画面内标题。参考 `design/第三轮/01-入江/02-交互中.png` 与 `03-完成态.png` 的中央大字气质；比首屏主标题更轻、更像水雾中浮出的仪式短句。
+用途：第一幕点击江面后，在雾中浮现再淡出的画面内标题。参考 历史设计稿（已清理，不随项目保留） 与 `03-完成态.png` 的中央大字气质；比首屏主标题更轻、更像水雾中浮出的仪式短句。
 
 约束：只生成四个中文字符，不带背景、边框、印章、图案、水纹、英文、logo、水印或签名；中文必须为简体“入江寻艾”。
 ```
@@ -345,8 +361,8 @@
 
 | 输出文件 | 用途 | 备注 |
 | --- | --- | --- |
-| `assets/source/fonts/aa-dongqi-chang-yue-yang-lou-ji/AaDongQiChangYueYangLouJi-2.ttf` | 来源字体归档 | 字体内部标注非商业使用 |
-| `assets/fonts/AaDongQiChangYueYangLouJi-subset.woff2` | 运行时小范围书法字体 | 章节标识、问诗诗轴 |
+| 源稿已清理，不随项目保留 | 来源字体归档 | 字体内部标注非商业使用 |
+| `assets/fonts/LXGWNeoZhiSong-subset.woff2` | 运行时小范围书法字体 | 章节标识、问诗诗轴 |
 
 ### 验证
 
@@ -357,9 +373,8 @@
 
 规范来源：
 
-- `doc/05-逐幕开发文档/07-尾声.md`
-- `doc/03-设计素材/提示词管理.md`
-- `doc/03-设计素材/素材管理.md`
+- `doc/03-逐幕剧本/07-尾声.md`
+- 历史素材规范文档（现已清理）
 
 状态：
 
@@ -395,7 +410,7 @@ Prompt：
 
 | 输出文件 | 用途 | 源图归档 | 备注 |
 | --- | --- | --- | --- |
-| `assets/backgrounds/bg-finale-ending-person.png` | 第七幕 ending 背景草稿 | `assets/source/finale-ending-person-generated-20260529.png` | 1672x941，PNG |
+| `assets/backgrounds/bg-finale-ending-person.png` | 第七幕 ending 背景草稿 | 源稿已清理，不随项目保留 | 1672x941，PNG |
 
 ### 验证
 
@@ -414,9 +429,9 @@ Prompt：
 
 | 输出文件 | 用途 | 源图归档 |
 | --- | --- | --- |
-| `assets/sprites/sprite-mugwort-steam-wisp.png` | 煮汤子幕锅口艾香蒸汽 | `assets/source/mugwort-steam-wisp-generated-20260605.png` |
-| `assets/sprites/sprite-qingtuan-flour-mist.png` | 制糕子幕艾汁米粉微尘 | `assets/source/qingtuan-flour-mist-generated-20260605.png` |
-| `assets/sprites/sprite-sachet-scent-wisp.png` | 佩香子幕香囊清气与五色丝残影 | `assets/source/sachet-scent-wisp-generated-20260605.png` |
+| `assets/sprites/sprite-mugwort-steam-wisp.png` | 煮汤子幕锅口艾香蒸汽 | 源稿已清理，不随项目保留 |
+| `assets/sprites/sprite-qingtuan-flour-mist.png` | 制糕子幕艾汁米粉微尘 | 源稿已清理，不随项目保留 |
+| `assets/sprites/sprite-sachet-scent-wisp.png` | 佩香子幕香囊清气与五色丝残影 | 源稿已清理，不随项目保留 |
 
 Prompt 摘要：
 
@@ -440,7 +455,7 @@ Prompt 摘要：
 
 | 输出文件 | 用途 | 源图归档 |
 | --- | --- | --- |
-| `assets/sprites/sprite-poem-hanging-charm.png` | 问诗上方水墨艾叶诗签吊饰 | `assets/source/poem-hanging-charm-generated-20260605-key.png` |
+| `assets/sprites/sprite-poem-hanging-charm.png` | 问诗上方水墨艾叶诗签吊饰 | 源稿已清理，不随项目保留 |
 
 Prompt 摘要：
 
@@ -464,7 +479,7 @@ Prompt 摘要：
 
 | 输出文件 | 用途 | 源图归档 |
 | --- | --- | --- |
-| `assets/sprites/sprite-poem-paper.png` | 问诗纸上点字交互底图 | `assets/source/poem-paper-generated-20260605-key.png` |
+| `assets/sprites/sprite-poem-paper.png` | 问诗纸上点字交互底图 | 源稿已清理，不随项目保留 |
 
 Prompt 摘要：
 

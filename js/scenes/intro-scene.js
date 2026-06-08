@@ -7,6 +7,7 @@
   var config = NS.CONFIG.intro;
   var FONTS = NS.FONT_STACKS;
 
+  // 第一幕独立场景，负责拨雾进度和入江叙事。
   function IntroScene(app, manager) {
     this.app = app;
     this.manager = manager;
@@ -48,6 +49,7 @@
     this.boundKeyDown = this.onKeyDown.bind(this);
   }
 
+  // 创建首屏背景、雾层、船、标题和交互事件。
   IntroScene.prototype.onEnter = function () {
     var viewport = utils.getViewport(this.app);
     this.container = new PIXI.Container();
@@ -88,7 +90,7 @@
 
     this.app.pixiApp.stage.addChild(this.container);
     this.app.dom.heroCopy.classList.add("is-muted");
-    this.app.dom.heroCopy.classList.add("is-suppressed");
+    this.app.dom.heroCopy.classList.remove("is-suppressed");
     this.app.dom.hideIntroCta();
     this.app.dom.showHint("轻触画面，拨开江雾");
     this.app.dom.hideStoryScroll();
@@ -96,6 +98,7 @@
     this.bindEvents();
   };
 
+  // 绑定第一幕的指针与键盘触发。
   IntroScene.prototype.bindEvents = function () {
     this.app.canvas.addEventListener("pointerdown", this.boundDown);
     this.app.canvas.addEventListener("pointermove", this.boundMove);
@@ -107,6 +110,7 @@
     global.addEventListener("keydown", this.boundKeyDown);
   };
 
+  // 解除第一幕事件，避免切场景后残留监听。
   IntroScene.prototype.unbindEvents = function () {
     this.app.canvas.removeEventListener("pointerdown", this.boundDown);
     this.app.canvas.removeEventListener("pointermove", this.boundMove);
@@ -118,6 +122,7 @@
     global.removeEventListener("keydown", this.boundKeyDown);
   };
 
+  // 首次触发拨雾动画。
   IntroScene.prototype.onPointerDown = function () {
     if (this.started) {
       return;
@@ -131,6 +136,7 @@
 
   IntroScene.prototype.onKeyDown = function () {};
 
+  // 创建“入江寻艾”水雾标题精灵。
   IntroScene.prototype.createJourneyTitle = function () {
     var image = this.app.assets.images.introJourneyTitle;
     var texture = this.app.assets.get("introJourneyTitle");
@@ -147,16 +153,21 @@
   };
 
   // 用户轻触后启动自动叙事时间轴
+  // 启动入江自动叙事时间轴。
   IntroScene.prototype.triggerAnimation = function () {
     this.started = true;
     this.pressing = false;
     this.elapsed = 0;
+    if (this.app.audio) {
+      this.app.audio.duck(0.62, 900, 5200);
+    }
     this.startRiverAmbience();
     this.app.dom.hideHint();
     this.app.dom.showStoryScroll();
     this.app.dom.heroCopy.classList.add("is-muted");
   };
 
+  // 退出第一幕并释放音频、纹理和事件。
   IntroScene.prototype.onExit = function () {
     this.unbindEvents();
     global.gsap.killTweensOf(this.titleText);
@@ -171,9 +182,14 @@
       this.fogTexture.destroy(true);
       this.fogTexture = null;
     }
+    if (this.sunGlowTexture) {
+      this.sunGlowTexture.destroy(true);
+      this.sunGlowTexture = null;
+    }
     this.stopRiverAmbience();
   };
 
+  // 创建轻量江水环境音。
   IntroScene.prototype.startRiverAmbience = function () {
     var AudioContextClass = global.AudioContext || global.webkitAudioContext;
     if (!AudioContextClass || this.audioContext) {
@@ -211,6 +227,7 @@
     }
   };
 
+  // 停止第一幕江水环境音。
   IntroScene.prototype.stopRiverAmbience = function () {
     if (this.riverGain && this.audioContext) {
       try {
@@ -247,6 +264,7 @@
     }
   };
 
+  // 每帧按进度刷新雾层、船、光、水纹和标题。
   IntroScene.prototype.onUpdate = function (dt) {
     var viewport = utils.getViewport(this.app);
     utils.fitCover(this.background, this.background.texture, viewport.width, viewport.height);
@@ -470,10 +488,11 @@
   };
 
   IntroScene.prototype.updateTitle = function (viewport, progress) {
-    var titleWidth = Math.min(viewport.width * 0.34, 520);
-    this.titleText.position.set(viewport.width / 2, viewport.height * 0.44);
+    var titleWidth = Math.min(viewport.width * 0.24, 360);
+    this.titleText.position.set(viewport.width * 0.5, viewport.height * 0.39);
     if (this.titleText instanceof PIXI.Text) {
-      this.titleText.style.fontSize = Math.round(Math.min(viewport.width, viewport.height) * 0.07);
+      this.titleText.style.fontSize = Math.round(Math.min(viewport.width, viewport.height) * 0.048);
+      this.titleText.style.fill = 0xf2ead6;
     } else {
       this.titleText.width = titleWidth;
       this.titleText.scale.y = this.titleText.scale.x;
@@ -482,10 +501,10 @@
       this.titleText.alpha = 0;
       return;
     }
-    var fadeIn = Math.min(1, progress / 0.22);
-    var fadeOut = progress > 0.56 ? Math.max(0, 1 - (progress - 0.56) / 0.28) : 1;
-    this.titleText.alpha = fadeIn * fadeOut * 0.92;
-    this.titleText.y = viewport.height * (0.46 - progress * 0.05);
+    var fadeIn = this.easeOutCubic(Math.min(1, Math.max(0, (progress - 0.08) / 0.24)));
+    var fadeOut = progress > 0.5 ? Math.max(0, 1 - (progress - 0.5) / 0.38) : 1;
+    this.titleText.alpha = fadeIn * fadeOut * 0.58;
+    this.titleText.y = viewport.height * (0.42 - progress * 0.035);
   };
 
   IntroScene.prototype.easeOutCubic = function (t) {

@@ -6,8 +6,9 @@
   var CONFIG = NS.CONFIG.bell;
   var FONTS = NS.FONT_STACKS;
   var BELL_CALLIGRAPHY_FONT = FONTS.calligraphy;
-  var BELL_TEXT_FONT = FONTS.text;
+  var BELL_TEXT_FONT = FONTS.wenkai;
 
+  // 构建和鸣主舞台：编钟、声路、回声节点和信息面板。
   NS.MVPScene.prototype.buildBell = function (viewport) {
     var group = new PIXI.Container();
     this.content.addChild(group);
@@ -18,6 +19,12 @@
     var flashbackLayer = new PIXI.Container();
     flashbackLayer.alpha = 0;
     group.addChild(flashbackLayer);
+
+    var stageTextureLayer = new PIXI.Container();
+    group.addChild(stageTextureLayer);
+
+    var soundPathLayer = new PIXI.Container();
+    group.addChild(soundPathLayer);
 
     var effectLayer = new PIXI.Container();
     group.addChild(effectLayer);
@@ -31,10 +38,16 @@
       group: group,
       bell: bell,
       ringLayer: ringLayer,
+      stageTextureLayer: stageTextureLayer,
+      stagePattern: null,
+      soundPathLayer: soundPathLayer,
+      soundPathIdle: null,
+      soundPathActive: null,
       effectLayer: effectLayer,
       flashbackLayer: flashbackLayer,
       flashbackShown: false,
       animating: false,
+      autoStarted: false,
       exiting: false,
       audioContext: null,
       knowledgeDot: null,
@@ -46,8 +59,10 @@
     bell.eventMode = "none";
     bell.cursor = "default";
 
+    this.createBellStageTexture(viewport, stageTextureLayer);
     this.createBellInfoPanel(viewport, effectLayer);
     this.createBellResonanceNodes(viewport, effectLayer);
+    this.createBellSoundPath(viewport, soundPathLayer);
     this.updateBellNodeInteractivity();
     if (this.manager.completed[this.index]) {
       group.alpha = 1;
@@ -56,6 +71,7 @@
     this.playBellEntryTransition(viewport, group);
   };
 
+  // 入场过渡：从水面和帘幕过渡到编钟声路。
   NS.MVPScene.prototype.playBellEntryTransition = function (viewport, group) {
     var scene = this;
     var entryLayer = new PIXI.Container();
@@ -120,9 +136,95 @@
       if (!entryLayer.destroyed) {
         entryLayer.destroy({ children: true });
       }
+      scene.startBellAutoSequence();
     });
   };
 
+  // 绘制礼乐台纹理，弱化纯背景的空白感。
+  NS.MVPScene.prototype.createBellStageTexture = function (viewport, layer) {
+    var texture = this.app.assets.get("duanwuPattern");
+    if (!texture) return;
+
+    var pattern = new PIXI.Sprite(texture);
+    pattern.anchor.set(0.5);
+    pattern.alpha = CONFIG.stagePatternAlpha;
+    var blendModes = PIXI.BLEND_MODES || {};
+    pattern.blendMode = blendModes.MULTIPLY != null ? blendModes.MULTIPLY : blendModes.NORMAL;
+    var targetWidth = viewport.width * CONFIG.stagePatternWidthRatio;
+    pattern.scale.set(targetWidth / pattern.texture.width);
+    pattern.position.set(viewport.width * CONFIG.stagePatternX, viewport.height * CONFIG.stagePatternY);
+    layer.addChild(pattern);
+    this.state.bell.stagePattern = pattern;
+  };
+
+  // 创建三处回声之间的声路图层。
+  NS.MVPScene.prototype.createBellSoundPath = function (viewport, layer) {
+    var state = this.state.bell;
+    if (!state) return;
+
+    state.soundPathIdle = new PIXI.Graphics();
+    state.soundPathActive = new PIXI.Graphics();
+    layer.addChild(state.soundPathIdle);
+    layer.addChild(state.soundPathActive);
+    this.redrawBellSoundPath(viewport, 0);
+  };
+
+  // 计算三处回声节点在当前视口中的坐标。
+  NS.MVPScene.prototype.getBellPathPoints = function (viewport) {
+    var nodes = CONFIG.resonanceNodes || [];
+    var points = [
+      { x: viewport.width * 0.34, y: viewport.height * 0.55 }
+    ];
+    nodes.forEach(function (node) {
+      points.push({ x: viewport.width * node.x, y: viewport.height * node.y });
+    });
+    points.push({ x: viewport.width * CONFIG.bellX, y: viewport.height * CONFIG.bellY });
+    return points;
+  };
+
+  NS.MVPScene.prototype.drawBellPathSegment = function (graphics, from, to, index) {
+    var lift = index % 2 === 0 ? -0.08 : 0.07;
+    var dx = to.x - from.x;
+    var cp1 = {
+      x: from.x + dx * 0.38,
+      y: from.y + lift * Math.abs(dx)
+    };
+    var cp2 = {
+      x: from.x + dx * 0.66,
+      y: to.y - lift * Math.abs(dx) * 0.7
+    };
+    graphics.moveTo(from.x, from.y);
+    graphics.bezierCurveTo(cp1.x, cp1.y, cp2.x, cp2.y, to.x, to.y);
+  };
+
+  // 重绘声路点亮进度。
+  NS.MVPScene.prototype.redrawBellSoundPath = function (viewport, activeCount) {
+    var state = this.state.bell;
+    if (!state || !state.soundPathIdle || !state.soundPathActive) return;
+
+    var points = this.getBellPathPoints(viewport);
+    state.soundPathIdle.clear();
+    state.soundPathActive.clear();
+
+    state.soundPathIdle.lineStyle(CONFIG.soundPathWidth, CONFIG.soundPathColor, CONFIG.soundPathAlpha);
+    for (var i = 0; i < points.length - 1; i += 1) {
+      this.drawBellPathSegment(state.soundPathIdle, points[i], points[i + 1], i);
+    }
+
+    if (activeCount <= 0) return;
+
+    state.soundPathActive.lineStyle(CONFIG.soundPathGlowWidth, CONFIG.soundPathColor, CONFIG.soundPathActiveAlpha * 0.14);
+    for (var glowIndex = 0; glowIndex < activeCount && glowIndex < points.length - 1; glowIndex += 1) {
+      this.drawBellPathSegment(state.soundPathActive, points[glowIndex], points[glowIndex + 1], glowIndex);
+    }
+
+    state.soundPathActive.lineStyle(CONFIG.soundPathWidth, CONFIG.soundPathColor, CONFIG.soundPathActiveAlpha);
+    for (var lineIndex = 0; lineIndex < activeCount && lineIndex < points.length - 1; lineIndex += 1) {
+      this.drawBellPathSegment(state.soundPathActive, points[lineIndex], points[lineIndex + 1], lineIndex);
+    }
+  };
+
+  // 创建右侧说明面板。
   NS.MVPScene.prototype.createBellInfoPanel = function (viewport, layer) {
     var panel = new PIXI.Container();
     panel.alpha = 0;
@@ -151,6 +253,7 @@
     this.state.bell.infoText = panel;
   };
 
+  // 创建三处回声节点及其提示文案。
   NS.MVPScene.prototype.createBellResonanceNodes = function (viewport, layer) {
     var scene = this;
     var state = this.state.bell;
@@ -184,6 +287,14 @@
       label.position.set(0, 24);
       group.addChild(label);
 
+      var caption = scene.createText(node.caption, 13, 0x4f3b16, 0);
+      caption.anchor.set(0.5, 0);
+      caption.style.fontFamily = BELL_TEXT_FONT;
+      caption.style.stroke = 0xf4ecd8;
+      caption.style.strokeThickness = 2;
+      caption.position.set(0, 48);
+      group.addChild(caption);
+
       var pulse = global.gsap.to(ring.scale, {
         x: 1.28,
         y: 1.28,
@@ -195,10 +306,15 @@
       });
       scene.cleanups.push(function () { pulse.kill(); });
 
-      group.on("pointertap", function () {
-        scene.tapBell(viewport, index);
+      state.resonanceNodes.push({
+        group: group,
+        ring: ring,
+        dot: dot,
+        label: label,
+        caption: caption,
+        activated: false,
+        pulse: pulse
       });
-      state.resonanceNodes.push({ group: group, ring: ring, dot: dot, label: label, activated: false, pulse: pulse });
     });
   };
 
@@ -207,18 +323,43 @@
     if (!state) return;
     state.resonanceNodes.forEach(function (nodeState, index) {
       var isCurrent = index === state.taps && !nodeState.activated && !state.animating;
-      nodeState.group.eventMode = isCurrent ? "static" : "none";
-      nodeState.group.cursor = isCurrent ? "pointer" : "default";
+      nodeState.group.eventMode = "none";
+      nodeState.group.cursor = "default";
       global.gsap.to(nodeState.group, {
         alpha: nodeState.activated ? 0.5 : isCurrent ? 0.95 : 0.34,
         duration: 0.22,
         ease: "sine.out"
       });
+      if (nodeState.caption) {
+        global.gsap.to(nodeState.caption, {
+          alpha: isCurrent || nodeState.activated ? CONFIG.currentNodeCaptionAlpha : 0,
+          duration: 0.22,
+          ease: "sine.out"
+        });
+      }
     });
   };
 
+  // 自动依次触发三处回声。
+  NS.MVPScene.prototype.startBellAutoSequence = function () {
+    var scene = this;
+    var state = this.state.bell;
+    if (!state || state.autoStarted || this.completed || this.manager.completed[this.index]) return;
+    state.autoStarted = true;
+
+    for (var i = 0; i < CONFIG.totalTaps; i += 1) {
+      (function (index) {
+        scene.scheduleCall(CONFIG.autoStartDelay + index * CONFIG.autoStepDelay, function () {
+          scene.tapBell(NS.utils.getViewport(scene.app), index);
+        });
+      }(i));
+    }
+  };
+
+  // 触发单个回声节点，播放声、光和文本反馈。
   NS.MVPScene.prototype.tapBell = function (viewport, nodeIndex) {
     var state = this.state.bell;
+    if (!state) return;
     var nodeState = state.resonanceNodes[nodeIndex];
 
     if (state.animating) return;
@@ -245,6 +386,7 @@
 
     var ringCount = state.taps;
     this.markBellNodeActive(nodeState);
+    this.redrawBellSoundPath(viewport, state.taps);
     this.spawnBellRing(nx, ny, CONFIG.ringMaxRadius * (0.55 + ringCount * 0.14), state.ringLayer);
     this.spawnBellGoldTrace(nx, ny, state.effectLayer, viewport, state.taps);
 
@@ -278,7 +420,10 @@
     }
     global.gsap.to(nodeState.ring, { alpha: 0.28, duration: 0.24 });
     global.gsap.to(nodeState.dot.scale, { x: 1.45, y: 1.45, duration: 0.24, yoyo: true, repeat: 1, ease: "sine.inOut" });
-    global.gsap.to(nodeState.label, { alpha: 0.46, duration: 0.24 });
+    global.gsap.to(nodeState.label, { alpha: CONFIG.activeNodeAlpha, duration: 0.24 });
+    if (nodeState.caption) {
+      global.gsap.to(nodeState.caption, { alpha: CONFIG.currentNodeCaptionAlpha, duration: 0.24 });
+    }
   };
 
   NS.MVPScene.prototype.showBellPoemEcho = function (x, y, viewport, layer) {
@@ -288,7 +433,7 @@
 
     chars.forEach(function (char, i) {
       var angle = -0.85 + i * 0.24;
-      var label = scene.createText(char, 24, 0xe8e1d2, 0);
+      var label = scene.createText(char, CONFIG.poemEchoFontSize, 0xe8e1d2, 0);
       label.anchor.set(0.5);
       label.style.fontFamily = BELL_CALLIGRAPHY_FONT;
       label.style.stroke = 0x1d332c;
@@ -310,14 +455,14 @@
       global.gsap.to(label.position, {
         x: x + Math.cos(angle) * radius,
         y: y + Math.sin(angle) * radius * 0.46,
-        duration: 1.25,
+        duration: CONFIG.poemEchoSpreadDuration,
         delay: i * 0.035,
         ease: "power2.out"
       });
       global.gsap.to(label, {
         alpha: 0,
-        duration: 0.54,
-        delay: 0.86 + i * 0.035,
+        duration: CONFIG.poemEchoFadeDuration,
+        delay: CONFIG.poemEchoSpreadDuration + CONFIG.poemEchoHoldDuration + i * 0.035,
         ease: "sine.in",
         onComplete: function () {
           if (!label.destroyed) label.destroy();
@@ -419,6 +564,7 @@
     var positions = [
       { x: 0.35, y: 0.35 },
       { x: 0.76, y: 0.36 },
+      { x: 0.68, y: 0.68 },
       { x: 0.38, y: 0.7 }
     ];
 
@@ -452,6 +598,7 @@
     global.gsap.to(layer, { alpha: 1, duration: 0.6 });
   };
 
+  // 三处回声完成后进入和鸣完成态。
   NS.MVPScene.prototype.completeBell = function (viewport) {
     var state = this.state.bell;
     var cx = viewport.width * CONFIG.bellX;
@@ -467,11 +614,13 @@
     this.updateBellNodeInteractivity();
     this.setHint(CONFIG.completeHint);
 
+    this.redrawBellSoundPath(viewport, CONFIG.totalTaps + 1);
     this.spawnBellRing(cx, cy, CONFIG.ringMaxRadius * 1.5, state.ringLayer);
     this.showBellInfoPanel(true);
     this.finish(true);
   };
 
+  // 重入已完成场景时恢复静态完成态。
   NS.MVPScene.prototype.prepareBellCompletedState = function (animate) {
     var state = this.state.bell;
     if (!state) return;
@@ -486,11 +635,15 @@
       }
       nodeState.group.alpha = 0.5;
       nodeState.ring.alpha = 0.28;
-      nodeState.label.alpha = 0.46;
+      nodeState.label.alpha = CONFIG.activeNodeAlpha;
+      if (nodeState.caption) {
+        nodeState.caption.alpha = CONFIG.currentNodeCaptionAlpha;
+      }
     });
     if (state.group) {
       state.group.alpha = 1;
     }
+    this.redrawBellSoundPath(NS.utils.getViewport(this.app), CONFIG.totalTaps + 1);
     this.showBellInfoPanel(animate !== false);
   };
 
@@ -505,6 +658,46 @@
     global.gsap.to(state.infoText, { alpha: 0.78, duration: 0.48, ease: "sine.out" });
   };
 
+  // 视口变化时重排节点、声路和面板。
+  NS.MVPScene.prototype.updateBellLayout = function (viewport) {
+    var state = this.state.bell;
+    if (!state) return;
+
+    if (state.stagePattern) {
+      var patternWidth = viewport.width * CONFIG.stagePatternWidthRatio;
+      state.stagePattern.scale.set(patternWidth / state.stagePattern.texture.width);
+      state.stagePattern.position.set(viewport.width * CONFIG.stagePatternX, viewport.height * CONFIG.stagePatternY);
+    }
+
+    if (state.bell) {
+      var bellWidth = viewport.width * CONFIG.bellWidthRatio;
+      state.bell.scale.set(bellWidth / state.bell.texture.width);
+      state.bell.position.set(viewport.width * CONFIG.bellX, viewport.height * CONFIG.bellY);
+    }
+
+    if (state.infoText) {
+      state.infoText.position.set(viewport.width * 0.72, viewport.height * 0.22);
+      state.infoText.children.forEach(function (child) {
+        if (child.style && child.style.wordWrap) {
+          child.style.wordWrapWidth = Math.min(340, viewport.width * 0.22);
+        }
+      });
+    }
+
+    state.resonanceNodes.forEach(function (nodeState, index) {
+      var node = CONFIG.resonanceNodes[index];
+      if (!node) return;
+      nodeState.group.position.set(viewport.width * node.x, viewport.height * node.y);
+    });
+
+    if (state.knowledgeDot) {
+      state.knowledgeDot.position.set(viewport.width * CONFIG.knowledgeDotX, viewport.height * CONFIG.knowledgeDotY);
+    }
+
+    this.redrawBellSoundPath(viewport, this.completed ? CONFIG.totalTaps + 1 : state.taps);
+  };
+
+  // 离场过渡：将礼乐回声收束到尾声印记。
   NS.MVPScene.prototype.playBellExitTransition = function () {
     var scene = this;
     var state = this.state.bell;
@@ -523,6 +716,7 @@
     }
 
     this.spawnBellRing(cx, cy, CONFIG.ringMaxRadius * 1.5, state.ringLayer);
+    this.redrawBellSoundPath(viewport, CONFIG.totalTaps + 1);
     this.showBellSealPrelude(cx, cy, viewport, state.effectLayer);
 
     var converge = new PIXI.Graphics();
@@ -621,10 +815,14 @@
    * 第二声：双谐波 440+880Hz
    * 第三声：三谐波 440+880+1320Hz，衰减延长至 2.4s
    */
+  // 合成编钟短音。
   NS.MVPScene.prototype.playBellChime = function (tapIndex) {
     var state = this.state.bell;
     var AudioContextClass = global.AudioContext || global.webkitAudioContext;
     if (!AudioContextClass) return;
+    if (this.app && this.app.audio) {
+      this.app.audio.duck(tapIndex >= 3 ? 0.38 : 0.52, 360, tapIndex >= 3 ? 2600 : 1500);
+    }
     if (!state.audioContext) {
       state.audioContext = new AudioContextClass();
     }
@@ -722,6 +920,7 @@
     }
   };
 
+  // 关闭和鸣场景独立音频上下文。
   NS.MVPScene.prototype.closeBellAudio = function () {
     var state = this.state.bell;
     if (!state || !state.audioContext || !state.audioContext.close) return;

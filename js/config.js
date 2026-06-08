@@ -1,17 +1,34 @@
-// 楚江互动全局数值配置，按场景分块供各幕读取。
+// 全局数值配置：渲染、音频与各分幕交互参数。
 (function (global) {
   "use strict";
 
   var NS = global.ChuJiang = global.ChuJiang || {};
 
   NS.CONFIG = {
-    // Pixi 渲染帧率与分辨率上限
+    // Pixi 渲染帧率与分辨率上限。
     renderer: {
       maxResolution: 2,
       maxDeltaMS: 100,
       fallbackDeltaMS: 16
     },
-    // 第一幕入江：雾散、船行与叙事进度
+    // 背景音乐：低音量贯穿，遇到局部音效时自动退后。
+    audio: {
+      src: "assets/audio/mist-river-recall.mp3",
+      baseVolume: 0.18,
+      fadeInMS: 3200,
+      sceneFadeMS: 1800,
+      duckRecoverMS: 2200,
+      sceneVolumes: {
+        intro: 0.14,
+        mugwort: 0.18,
+        wrap: 0.18,
+        drum: 0.1,
+        poem: 0.17,
+        bell: 0.1,
+        finale: 0.16
+      }
+    },
+    // 第一幕入江：雾散、船行与叙事进度。
     intro: {
       autoDurationMS: 8000, // 动画时长
       storyStartProgress: 0.16,
@@ -32,7 +49,7 @@
       windLifeDecay: 0.0012,
       completionHintMS: 1800
     },
-    // 未实现分幕的占位样式
+    // 未实现分幕的占位样式。
     emptyScene: {
       overlayColor: 0xecf5f0,
       overlayAlpha: 0.34,
@@ -43,7 +60,7 @@
       captionFontSize: 18,
       captionOffsetY: 48
     },
-    // 第二幕悬艾：全屏触发、艾草飞行与挂艾落点
+    // 第二幕寻艾：挂艾面板、粒子与完成节奏。
     mugwort: {
       targetX: 0.835,
       targetY: 0.36,
@@ -348,13 +365,26 @@
       ringAlpha: 0.6,
       entryText: "诗声入殿，远钟将鸣",
       entryDuration: 1.65,
-      tapHints: ["字落成声", "艾、粽、舟、诗，一声相和"],
+      tapHints: ["字落成声，余波向前", "风物被钟声照见"],
       completeHint: "金声入水，楚江和鸣",
-      introHint: "沿声波点亮三处回声",
+      introHint: "听三处回声次第和鸣",
+      autoStartDelay: 0.5,
+      autoStepDelay: 4.2,
+      stagePatternAlpha: 0.1,
+      stagePatternWidthRatio: 0.34,
+      stagePatternX: 0.58,
+      stagePatternY: 0.48,
+      soundPathColor: 0xc8a45d,
+      soundPathAlpha: 0.16,
+      soundPathActiveAlpha: 0.56,
+      soundPathWidth: 2,
+      soundPathGlowWidth: 8,
+      currentNodeCaptionAlpha: 0.72,
+      activeNodeAlpha: 0.68,
       resonanceNodes: [
-        { key: "poem", label: "诗声", caption: "字落成声", x: 0.46, y: 0.42 },
-        { key: "memory", label: "风物", caption: "艾粽舟影", x: 0.64, y: 0.54 },
-        { key: "ritual", label: "礼乐", caption: "楚江和鸣", x: 0.55, y: 0.68 }
+        { key: "poem", label: "诗声", caption: "字落成声", x: 0.44, y: 0.42 },
+        { key: "memory", label: "风物", caption: "艾粽舟影", x: 0.62, y: 0.54 },
+        { key: "ritual", label: "礼乐", caption: "楚江和鸣", x: 0.53, y: 0.68 }
       ],
       infoTitle: "三声相和",
       infoLines: [
@@ -363,7 +393,11 @@
         "编钟礼乐与江声合拢，收束为端午印记。"
       ],
       poemEchoChars: ["江", "艾", "兰", "舟", "鼓", "风", "月", "钟"],
-      poemEchoAlpha: 0.16,
+      poemEchoAlpha: 0.38,
+      poemEchoFontSize: 30,
+      poemEchoSpreadDuration: 1.65,
+      poemEchoHoldDuration: 1.35,
+      poemEchoFadeDuration: 0.9,
       goldTraceWidthRatio: 0.22,
       goldTraceAlpha: 0.54,
       goldTraceDuration: 1.15,
@@ -371,7 +405,7 @@
       goldTraceOffsetY: -0.02,
       flashbackAlpha: 0.14,
       flashbackDuration: 2.0,
-      flashbackAssets: ["mugwort", "leafLeft", "boat"],
+      flashbackAssets: ["mugwort", "leafLeft", "zongzi", "boat"],
       convergeDuration: 1.55,
       sealPreludeChars: ["艾", "粽", "舟", "钟"],
       tapScale: 1.04,

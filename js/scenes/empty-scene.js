@@ -7,6 +7,7 @@
   var config = NS.CONFIG.emptyScene;
   var FONTS = NS.FONT_STACKS;
 
+  // 用于未接入分幕的占位实现。
   function EmptyScene(app, manager, meta) {
     this.app = app;
     this.manager = manager;
@@ -20,6 +21,7 @@
     this.lastHeight = 0;
   }
 
+  // 创建占位背景、标题和说明。
   EmptyScene.prototype.onEnter = function () {
     var viewport = utils.getViewport(this.app);
     var texture = this.app.assets.get(this.meta.assets[0]);
@@ -46,6 +48,7 @@
     this.app.pixiApp.stage.addChild(this.container);
   };
 
+  // 创建占位文本。
   EmptyScene.prototype.createText = function (text, fontSize, alpha) {
     var label = new PIXI.Text(text, {
       fontFamily: FONTS.text,
@@ -58,6 +61,7 @@
     return label;
   };
 
+  // 绘制占位遮罩。
   EmptyScene.prototype.drawOverlay = function (width, height) {
     this.overlay.clear();
     this.overlay.beginFill(config.overlayColor, config.overlayAlpha);
@@ -65,6 +69,7 @@
     this.overlay.endFill();
   };
 
+  // 视口变化时重排占位内容。
   EmptyScene.prototype.onUpdate = function () {
     if (!this.container) {
       return;
@@ -83,6 +88,7 @@
     this.caption.position.set(viewport.width / 2, viewport.height / 2 + config.captionOffsetY);
   };
 
+  // 销毁占位场景 Pixi 容器。
   EmptyScene.prototype.onExit = function () {
     if (!this.container) {
       return;

@@ -63,6 +63,9 @@
   DrumEffects.playDrumHit = function (scene, isFinal, isUserExtra) {
     var ctx = getAudioCtx(scene);
     if (!ctx) return;
+    if (scene.app && scene.app.audio) {
+      scene.app.audio.duck(isFinal ? 0.34 : 0.46, 180, isFinal ? 1700 : 760);
+    }
 
     var now = ctx.currentTime;
     var amp = isFinal ? 1.5 : (isUserExtra ? 0.7 : 1.0);

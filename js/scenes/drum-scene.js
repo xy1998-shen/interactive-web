@@ -47,10 +47,7 @@
     "<p>龙舟竞渡承接江上追思，也把乡人合力、祈愿安康的节令情感，化成可听见的鼓声与水痕。</p>"
   ].join("");
 
-  // ═══════════════════════════════════════════════
-  // 入口：构建视差舞台
-  // ═══════════════════════════════════════════════
-
+  // 构建听鼓视差舞台、交互层和自动鼓序列。
   NS.MVPScene.prototype.buildDrum = function (viewport) {
     var scene = this;
 
@@ -170,6 +167,7 @@
     });
   };
 
+  // 按第一人称背景比例铺满并保留前景构图。
   NS.MVPScene.prototype.fitDrumBackground = function (viewport) {
     var texture = this.background && this.background.texture;
     if (!texture) return;
@@ -181,6 +179,7 @@
     this.background.y = (viewport.height - this.background.height) * 0.5;
   };
 
+  // 记录背景基础位置，供视差动画回弹使用。
   NS.MVPScene.prototype.captureDrumBackgroundBase = function (viewport) {
     var state = this.state && this.state.drum;
     if (!state || !this.background) return;
@@ -192,6 +191,7 @@
     state.bgCenterY = viewport.height * 0.5;
   };
 
+  // 视口变化时重排鼓面、点击区和视觉层。
   NS.MVPScene.prototype.updateDrumLayout = function (viewport) {
     this.fitDrumBackground(viewport);
     this.captureDrumBackgroundBase(viewport);
@@ -201,6 +201,7 @@
   // 入场文案
   // ═══════════════════════════════════════════════
 
+  // 创建听鼓入场短句。
   NS.MVPScene.prototype.createDrumEntryText = function (viewport) {
     var label = this.createText("远鼓入江，舟影渐明", CONFIG.entryTextFontSize, 0xf4ecd8, 0);
     label.anchor.set(0.5);
@@ -232,6 +233,7 @@
   // 自动鼓序列：BPM 70 → 130，缓加速
   // ═══════════════════════════════════════════════
 
+  // 安排自动鼓声序列。
   NS.MVPScene.prototype.scheduleDrumSequence = function (viewport) {
     var scene = this;
     var state = this.state.drum;
@@ -319,6 +321,7 @@
    * @param {boolean} isFinal - 是否为序列最终一击
    * @param {boolean} isUserExtra - 用户加击：略弱、音色稍亮
    */
+  // 触发一次鼓击的视觉与音频反馈。
   NS.MVPScene.prototype.triggerDrumPulse = function (viewport, isFinal, isUserExtra) {
     var state = this.state.drum;
     if (!state) return;
@@ -426,6 +429,7 @@
   // 视差更新（每帧）
   // ═══════════════════════════════════════════════
 
+  // 更新背景与水痕的轻微行进视差。
   NS.MVPScene.prototype.updateDrumParallax = function () {
     var state = this.state && this.state.drum;
     if (!state || !this.background) return;
@@ -476,6 +480,7 @@
   // 完成流程
   // ═══════════════════════════════════════════════
 
+  // 鼓序列完成后进入完成态。
   NS.MVPScene.prototype.completeDrum = function (viewport) {
     var scene = this;
     var state = this.state.drum;

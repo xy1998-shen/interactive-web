@@ -1,17 +1,21 @@
+// 应用入口：初始化 Pixi、DOM、资源、音频与场景管理器。
 (function (global) {
   "use strict";
 
   var NS = global.ChuJiang = global.ChuJiang || {};
 
+  // 持有全局运行对象，负责把各子模块串起来。
   function App() {
     this.canvas = document.getElementById("stage");
     this.dom = new NS.DOMLayer();
     this.assets = new NS.AssetLoader(NS.ASSET_MANIFEST);
+    this.audio = NS.AudioManager ? new NS.AudioManager(NS.CONFIG.audio) : null;
     this.time = 0;
     this.pixiApp = null;
     this.manager = null;
   }
 
+  // 启动应用；依赖库缺失或 WebGL 初始化失败时给出降级提示。
   App.prototype.start = function () {
     if (!global.PIXI || !global.gsap) {
       this.dom.showHint("本地 PixiJS / GSAP 资源未加载");
@@ -25,12 +29,16 @@
       console.error("Pixi 渲染器初始化失败:", error);
       return Promise.reject(error);
     }
+    if (this.audio) {
+      this.audio.init();
+    }
     this.manager = new NS.SceneManager(this);
     this.bindProgress();
     this.bindTicker();
     return this.loadInitialScene();
   };
 
+  // 创建全屏 Pixi 渲染器，绑定到 index.html 中的 #stage。
   App.prototype.createRenderer = function () {
     this.pixiApp = new PIXI.Application({
       view: this.canvas,
@@ -42,6 +50,7 @@
     });
   };
 
+  // 预加载第一幕资源，并在完成后进入初始场景。
   App.prototype.loadInitialScene = function () {
     var app = this;
     return this.assets.loadManifest(NS.SCENES[0].assets, function (loaded, total) {
@@ -56,6 +65,7 @@
     });
   };
 
+  // 绑定 DOM 层的进度节点、CTA 与故事按钮。
   App.prototype.bindProgress = function () {
     var app = this;
     this.dom.nodes.forEach(function (node, index) {
@@ -79,6 +89,7 @@
     }
   };
 
+  // 把 Pixi ticker 接到统一帧更新入口。
   App.prototype.bindTicker = function () {
     var app = this;
     this.pixiApp.ticker.add(function () {
@@ -86,6 +97,7 @@
     });
   };
 
+  // 每帧推进当前场景；限制异常大 dt，避免切后台后动画跳变。
   App.prototype.tick = function () {
     var ticker = this.pixiApp.ticker;
     var dt = ticker.deltaMS || NS.CONFIG.renderer.fallbackDeltaMS;

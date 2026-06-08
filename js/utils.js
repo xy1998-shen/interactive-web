@@ -1,8 +1,10 @@
+// 通用工具：视口读取、图片适配与 canvas 绘制辅助。
 (function (global) {
   "use strict";
 
   var NS = global.ChuJiang = global.ChuJiang || {};
 
+  // 读取当前 Pixi 渲染视口尺寸。
   function getViewport(app) {
     return {
       width: app.pixiApp.renderer.width / app.pixiApp.renderer.resolution,
@@ -10,6 +12,7 @@
     };
   }
 
+  // 将 Pixi 显示对象按 cover 模式铺满视口。
   function fitCover(displayObject, texture, width, height) {
     var sourceWidth = texture.orig ? texture.orig.width : texture.width;
     var sourceHeight = texture.orig ? texture.orig.height : texture.height;
@@ -20,6 +23,7 @@
     displayObject.y = (height - displayObject.height) / 2;
   }
 
+  // 将 HTMLImageElement 按 cover 模式绘制到 canvas。
   function drawImageCover(ctx, image, width, height, alpha) {
     var scale = Math.max(width / image.width, height / image.height);
     var drawWidth = image.width * scale;

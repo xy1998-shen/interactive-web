@@ -35,7 +35,7 @@
 
   var STEAM_POOL_SIZE = 16;
   var STEAM_SPAWN_INTERVAL = 0.18; // 秒
-  var PANEL_AUTOPLAY_INTERVAL_MS = 8000;
+  var PANEL_AUTOPLAY_INTERVAL_MS = 3200;
   var KNOWLEDGE_TITLE = "端午寻艾 · 悬艾守户";
   var KNOWLEDGE_CONTENT = [
     "<p><strong>为何端午悬艾？</strong></p>",
@@ -457,7 +457,7 @@
       return;
     }
 
-    // 放慢自动播放，让每个子幕有完整阅读时间。
+    // 子幕保持短暂停留，避免回望式面板切换拖慢节奏。
     this.startAutoPlay(PANEL_AUTOPLAY_INTERVAL_MS);
   };
 
@@ -476,7 +476,7 @@
       rt.visitedCount += 1;
       if (rt.visitedCount >= 4 && !rt.finishScheduled) {
         rt.finishScheduled = true;
-        this.scheduleCall(2.0, function () {
+        this.scheduleCall(1.2, function () {
           scene.stopAutoPlay();
           if (!scene.completed) {
             scene.showMugwortKnowledgeCard();
@@ -524,6 +524,7 @@
     }
   };
 
+  // 弹出寻艾知识卡。
   NS.MVPScene.prototype.showMugwortKnowledgeCard = function () {
     if (this.app && this.app.dom && this.app.dom.showKnowledgeCard) {
       this.app.dom.showKnowledgeCard(KNOWLEDGE_TITLE, KNOWLEDGE_CONTENT);
@@ -539,14 +540,17 @@
   MugwortScene.prototype = Object.create(NS.MVPScene.prototype);
   MugwortScene.prototype.constructor = MugwortScene;
 
+  // 进入寻艾场景，复用 MVPScene 生命周期。
   MugwortScene.prototype.onEnter = function () {
     NS.MVPScene.prototype.onEnter.call(this);
   };
 
+  // 推进寻艾面板粒子与完成检测。
   MugwortScene.prototype.onUpdate = function (dt) {
     NS.MVPScene.prototype.onUpdate.call(this, dt);
   };
 
+  // 退出寻艾并清理基类资源。
   MugwortScene.prototype.onExit = function () {
     NS.MVPScene.prototype.onExit.call(this);
   };

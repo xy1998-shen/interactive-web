@@ -5,6 +5,7 @@
   var NS = global.ChuJiang = global.ChuJiang || {};
   var utils = NS.utils;
   var FONTS = NS.FONT_STACKS;
+  var PANEL_TRANSITION_DURATION = 0.48;
 
   // 各幕提示语、完成语与知识卡片文案
   var SCENE_COPY = {
@@ -29,12 +30,12 @@
       knowledge: "屈原诗意与端午记忆相连，是楚江旅程的精神底色。"
     },
     bell: {
-      hint: "沿声波点亮三处回声",
-      done: "钟已鸣",
+      hint: "听三处回声次第和鸣",
+      done: "",
       knowledge: "编钟礼乐承载荆楚记忆；在这里，它与江声、诗字和端午风物一起合鸣。"
     },
     finale: {
-      hint: "点亮四枚端午印记",
+      hint: "回望一路风物，让四枚印记归心",
       done: "印记已合",
       knowledge: "艾、粽、舟、钟，汇成这趟楚江端午的四个记忆点。"
     }
@@ -58,6 +59,7 @@
     this.viewportHeight = 0;
   }
 
+  // 进入分幕：创建背景、遮罩、公共文案，再派发到具体 buildXxx。
   MVPScene.prototype.onEnter = function () {
     var viewport = utils.getViewport(this.app);
     this.container = new PIXI.Container();
@@ -78,7 +80,7 @@
     this.app.dom.heroCopy.classList.remove("is-muted");
     this.app.dom.heroCopy.classList.toggle(
       "is-suppressed",
-      this.meta.id === "bell" || this.meta.id === "finale"
+      this.meta.id === "finale"
     );
     if (this.meta.id !== "mugwort" && this.meta.id !== "poem") {
       this.app.dom.showHint(SCENE_COPY[this.meta.id].hint);
@@ -90,6 +92,7 @@
     }
   };
 
+  // 根据场景 id 选择主背景资源。
   MVPScene.prototype.pickBackground = function () {
     if (this.meta.id === "mugwort") {
       return this.app.assets.get("mugwortVillage");
@@ -100,6 +103,7 @@
     return this.app.assets.get(this.meta.assets[0]);
   };
 
+  // 绘制各幕共用的轻遮罩，保证文字和前景可读。
   MVPScene.prototype.drawOverlay = function (viewport) {
     this.overlay.clear();
     if (this.meta.id === "bell") {
@@ -128,6 +132,7 @@
     this.overlay.endFill();
   };
 
+  // 创建公共标题与知识文本占位。
   MVPScene.prototype.createCommonText = function (viewport) {
     this.knowledgeText = this.createText("", 22, 0x16343a, 0);
     this.knowledgeText.anchor.set(0.5);
@@ -168,6 +173,7 @@
     this.content.addChild(this.knowledgeText);
   };
 
+  // 创建 Pixi 文本，统一字体、描边和锚点。
   MVPScene.prototype.createText = function (text, fontSize, fill, alpha) {
     var label = new PIXI.Text(text, {
       fontFamily: FONTS.text,
@@ -180,6 +186,7 @@
     return label;
   };
 
+  // 按资源 key 创建并定位精灵。
   MVPScene.prototype.createSprite = function (key, widthRatio, xRatio, yRatio, viewport) {
     var sprite = new PIXI.Sprite(this.app.assets.get(key));
     sprite.anchor.set(0.5);
@@ -210,7 +217,7 @@
     finale: "buildFinale"
   };
 
-  // 按 meta.id 分发到对应分幕构建函数
+  // 根据 meta.id 派发到具体分幕构建函数。
   MVPScene.prototype.buildScene = function (viewport) {
     var builderName = SCENE_BUILDERS[this.meta.id] || SCENE_BUILDERS.finale;
     if (this[builderName]) {
@@ -218,6 +225,7 @@
     }
   };
 
+  // 画一次完成反馈圆环。
   MVPScene.prototype.drawRing = function (x, y, radius, color) {
     var ring = new PIXI.Graphics();
     ring.lineStyle(2, color, 0.7);
@@ -236,6 +244,7 @@
     global.gsap.to(ring.scale, { x: radius / 16, y: radius / 16, duration: 0.72, ease: "power2.out" });
   };
 
+  // 安全停止指定对象上的 GSAP 动画。
   MVPScene.prototype.killTweens = function (displayObject) {
     if (!displayObject) {
       return;
@@ -252,6 +261,7 @@
     }
   };
 
+  // 注册延迟任务，并自动纳入 onExit 清理。
   MVPScene.prototype.scheduleCall = function (delay, callback) {
     var scene = this;
     var call = global.gsap.delayedCall(delay, function () {
@@ -266,10 +276,12 @@
     return call;
   };
 
+  // 显示当前场景提示文案。
   MVPScene.prototype.setHint = function (text) {
     this.app.dom.showHint(text);
   };
 
+  // 场景完成后进入下一幕。
   MVPScene.prototype.goToNextScene = function () {
     var scene = this;
     if (!this.container) {
@@ -287,6 +299,7 @@
     });
   };
 
+  // 复用全局 AudioContext，供轻量提示音使用。
   MVPScene.prototype.getSharedAudioContext = function () {
     var AudioContextClass = global.AudioContext || global.webkitAudioContext;
     if (!AudioContextClass) {
@@ -301,6 +314,7 @@
     return this.sharedAudioContext;
   };
 
+  // 播放一声柔和短音，作为完成或提示反馈。
   MVPScene.prototype.playSoftTone = function (frequency, duration, peakGain) {
     var context = this.getSharedAudioContext();
     if (!context) {
@@ -392,7 +406,7 @@
     }
   };
 
-  // 标记完成并展示知识文案与下一幕入口
+  // 标记当前分幕完成，并执行场景专属完成处理。
   MVPScene.prototype.finish = function (animate) {
     if (this.completed && animate) {
       return;
@@ -415,6 +429,7 @@
     handler(this, animate);
   };
 
+  // 显示一段短暂知识文案，结束后自动淡出。
   MVPScene.prototype.showTimedKnowledgeText = function (text, alpha, duration) {
     if (!this.knowledgeText) {
       return;
@@ -431,6 +446,7 @@
     });
   };
 
+  // 每帧更新：处理重排和分幕专属 update hook。
   MVPScene.prototype.onUpdate = function () {
     if (!this.container) {
       return;
@@ -452,8 +468,12 @@
     if (viewportChanged && this.meta.id === "drum" && this.updateDrumLayout) {
       this.updateDrumLayout(viewport);
     }
+    if (viewportChanged && this.meta.id === "bell" && this.updateBellLayout) {
+      this.updateBellLayout(viewport);
+    }
   };
 
+  // 退出场景：停止动画、清理 DOM、销毁 Pixi 容器。
   MVPScene.prototype.onExit = function () {
     if (this.meta.id === "bell" && this.closeBellAudio) {
       this.closeBellAudio();
@@ -489,6 +509,7 @@
   // 当前淡出+左移、下一帧从右滑入的丝滑切换；
   // 支持 startAutoPlay()/stopAutoPlay() 顺序自动播放。
   // ============================================================
+  // 初始化面板式场景，并创建面板背景、内容层和指示器。
   MVPScene.prototype.initPanels = function (panelConfigs) {
     var scene = this;
     var viewport = utils.getViewport(this.app);
@@ -552,6 +573,7 @@
     }
   };
 
+  // 切换当前面板，负责淡入淡出和 DOM 标题同步。
   MVPScene.prototype.switchToPanel = function (index, direction) {
     var scene = this;
     if (!this.panels || !this.panels.length) {
@@ -588,7 +610,7 @@
 
     global.gsap.to(fromPanel, {
       alpha: 0,
-      duration: 0.8,
+      duration: PANEL_TRANSITION_DURATION,
       ease: "power2.inOut",
       onComplete: function () {
         if (!fromPanel.destroyed) {
@@ -599,17 +621,17 @@
     });
     global.gsap.to(fromPanel.position, {
       x: fromExitX,
-      duration: 0.8,
+      duration: PANEL_TRANSITION_DURATION,
       ease: "power2.inOut"
     });
     global.gsap.to(toPanel, {
       alpha: 1,
-      duration: 0.8,
+      duration: PANEL_TRANSITION_DURATION,
       ease: "power2.inOut"
     });
     global.gsap.to(toPanel.position, {
       x: 0,
-      duration: 0.8,
+      duration: PANEL_TRANSITION_DURATION,
       ease: "power2.inOut",
       onComplete: function () {
         scene.panelSwitching = false;
@@ -630,6 +652,7 @@
     }
   };
 
+  // 启动面板自动轮播。
   MVPScene.prototype.startAutoPlay = function (intervalMS) {
     var scene = this;
     if (!this.panels || this.panels.length < 2) {
@@ -658,6 +681,7 @@
     this.cleanups.push(function () { scene.stopAutoPlay(); });
   };
 
+  // 停止面板自动轮播。
   MVPScene.prototype.stopAutoPlay = function () {
     if (this.autoPlayCall) {
       this.autoPlayCall.kill();
@@ -673,6 +697,7 @@
     return this.panels ? this.panels.length : 0;
   };
 
+  // 销毁面板和相关 DOM 控件。
   MVPScene.prototype.destroyPanels = function () {
     this.stopAutoPlay();
     if (this.panels && this.panels.length) {
