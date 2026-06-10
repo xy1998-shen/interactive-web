@@ -5,17 +5,16 @@ param(
 
 $ErrorActionPreference = "Stop"
 
-Add-Type -AssemblyName System.Web
-
-$listener = [System.Net.HttpListener]::new()
-$prefix = "http://127.0.0.1:$Port/"
-$listener.Prefixes.Add($prefix)
+$rootPath = [System.IO.Path]::GetFullPath($Root)
+$ip = [Net.IPAddress]::Parse("127.0.0.1")
+$listener = New-Object Net.Sockets.TcpListener -ArgumentList $ip,$Port
 $listener.Start()
 
-Write-Host "PowerShell static server listening on $prefix"
+Write-Host "PowerShell static server listening on http://127.0.0.1:$Port/"
 
 function Get-ContentType([string]$Path) {
-  switch ([System.IO.Path]::GetExtension($Path).ToLowerInvariant()) {
+  $extension = [System.IO.Path]::GetExtension($Path).ToLowerInvariant()
+  switch ($extension) {
     ".html" { return "text/html; charset=utf-8" }
     ".htm" { return "text/html; charset=utf-8" }
     ".css" { return "text/css; charset=utf-8" }
@@ -32,43 +31,74 @@ function Get-ContentType([string]$Path) {
   }
 }
 
+function Send-Response($stream, [int]$StatusCode, [string]$StatusText, [byte[]]$Body, [string]$ContentType) {
+  $header = "HTTP/1.1 $StatusCode $StatusText`r`nContent-Type: $ContentType`r`nContent-Length: $($Body.Length)`r`nConnection: close`r`n`r`n"
+  $headerBytes = [System.Text.Encoding]::ASCII.GetBytes($header)
+  $stream.Write($headerBytes, 0, $headerBytes.Length)
+  if ($Body.Length -gt 0) {
+    $stream.Write($Body, 0, $Body.Length)
+  }
+}
+
 try {
-  while ($listener.IsListening) {
-    $context = $listener.GetContext()
-    $requestPath = [System.Web.HttpUtility]::UrlDecode($context.Request.Url.AbsolutePath.TrimStart("/"))
-    if ([string]::IsNullOrWhiteSpace($requestPath)) {
-      $requestPath = "index.html"
+  while ($true) {
+    $client = $listener.AcceptTcpClient()
+    try {
+      $stream = $client.GetStream()
+      $reader = New-Object System.IO.StreamReader($stream, [System.Text.Encoding]::ASCII, $false, 1024, $true)
+      $requestLine = $reader.ReadLine()
+
+      while ($true) {
+        $line = $reader.ReadLine()
+        if ($line -eq $null -or $line -eq "") {
+          break
+        }
+      }
+
+      if ([string]::IsNullOrWhiteSpace($requestLine)) {
+        $body = [System.Text.Encoding]::UTF8.GetBytes("Bad Request")
+        Send-Response $stream 400 "Bad Request" $body "text/plain; charset=utf-8"
+        continue
+      }
+
+      $parts = $requestLine.Split(" ")
+      $rawPath = "/"
+      if ($parts.Length -ge 2) {
+        $rawPath = $parts[1]
+      }
+      $pathOnly = $rawPath.Split("?")[0]
+      $requestPath = [Uri]::UnescapeDataString($pathOnly.TrimStart("/"))
+      if ([string]::IsNullOrWhiteSpace($requestPath)) {
+        $requestPath = "index.html"
+      }
+
+      $relativePath = $requestPath -replace "/", [System.IO.Path]::DirectorySeparatorChar
+      $fullPath = [System.IO.Path]::GetFullPath([System.IO.Path]::Combine($rootPath, $relativePath))
+
+      if (-not $fullPath.StartsWith($rootPath, [System.StringComparison]::OrdinalIgnoreCase)) {
+        $body = [System.Text.Encoding]::UTF8.GetBytes("Forbidden")
+        Send-Response $stream 403 "Forbidden" $body "text/plain; charset=utf-8"
+        continue
+      }
+
+      if ([System.IO.Directory]::Exists($fullPath)) {
+        $fullPath = [System.IO.Path]::Combine($fullPath, "index.html")
+      }
+
+      if (-not [System.IO.File]::Exists($fullPath)) {
+        $body = [System.Text.Encoding]::UTF8.GetBytes("Not Found")
+        Send-Response $stream 404 "Not Found" $body "text/plain; charset=utf-8"
+        continue
+      }
+
+      $bytes = [System.IO.File]::ReadAllBytes($fullPath)
+      Send-Response $stream 200 "OK" $bytes (Get-ContentType $fullPath)
     }
-
-    $relativePath = $requestPath -replace "/", [System.IO.Path]::DirectorySeparatorChar
-    $fullPath = [System.IO.Path]::GetFullPath([System.IO.Path]::Combine($Root, $relativePath))
-    $rootPath = [System.IO.Path]::GetFullPath($Root)
-
-    if (-not $fullPath.StartsWith($rootPath, [System.StringComparison]::OrdinalIgnoreCase)) {
-      $context.Response.StatusCode = 403
-      $context.Response.Close()
-      continue
+    finally {
+      $client.Close()
     }
-
-    if ([System.IO.Directory]::Exists($fullPath)) {
-      $fullPath = [System.IO.Path]::Combine($fullPath, "index.html")
-    }
-
-    if (-not [System.IO.File]::Exists($fullPath)) {
-      $context.Response.StatusCode = 404
-      $context.Response.Close()
-      continue
-    }
-
-    $bytes = [System.IO.File]::ReadAllBytes($fullPath)
-    $context.Response.StatusCode = 200
-    $context.Response.ContentType = Get-ContentType $fullPath
-    $context.Response.ContentLength64 = $bytes.Length
-    $context.Response.OutputStream.Write($bytes, 0, $bytes.Length)
-    $context.Response.Close()
   }
 }
 finally {
   $listener.Stop()
-  $listener.Close()
 }

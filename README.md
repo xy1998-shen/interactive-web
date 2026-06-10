@@ -19,15 +19,15 @@ macOS 双击启动：
 Windows 双击启动：
 
 ```bat
-启动预览.bat
+start-preview.bat
 ```
 
-在资源管理器中双击 `启动预览.bat` 即可。脚本会自动选择可用端口，启动本地静态服务，并打开浏览器访问作品页面；关闭脚本打开的命令行窗口即可停止服务。
+在资源管理器中双击 `start-preview.bat` 即可。`启动预览.bat` 也会转到同一个脚本。脚本会自动选择可用端口，启动本地静态服务，并打开浏览器访问作品页面；关闭脚本打开的命令行窗口即可停止服务。
 
 没有 Python 环境时：
 
 - macOS：`启动预览.command` 会按 Python 3、Python、Ruby、PHP 的顺序寻找可用运行环境；通常系统自带 Ruby 或 PHP 时也能直接启动。
-- Windows：`启动预览.bat` 会优先使用 Python 3；如果没有 Python，会自动调用 Windows PowerShell 内置静态服务。若公司策略禁用了 PowerShell 脚本，再安装 Python 3 后重试。
+- Windows：`start-preview.bat` 会优先使用 Python 3；如果没有 Python，会自动调用 Windows PowerShell 内置静态服务，不需要额外安装运行环境。若公司策略禁用了 PowerShell，则需要安装 Python 3 后重试。为避免部分 Windows 环境对中文文件名或 UTF-8 批处理解析异常，优先使用 ASCII 文件名 `start-preview.bat`。
 
 手动本地服务预览：
 
